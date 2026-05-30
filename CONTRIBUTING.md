@@ -13,11 +13,13 @@ Claude        → Merge + deploy + close Issue
 
 ## DGX Spark
 
+Access details are shared privately with authorized team members only. Contact Hans directly.
+
 | | |
 |---|---|
-| SSH | `ssh hans@100.85.145.63` |
-| Ollama | `http://100.85.145.63:11434` |
-| MCP | `ws://100.85.145.63:8765` |
+| SSH | `ssh hans@[DGX_TAILSCALE_IP]` |
+| Ollama | `http://[DGX_TAILSCALE_IP]:11434` |
+| MCP | `ws://[DGX_TAILSCALE_IP]:8765` |
 | Acceptance gate | `bash ~/hermes-cfo/scripts/test-tool-enforcement.sh` |
 | Deploy | `systemctl --user restart hermes-gateway.service` |
 | Logs | `journalctl --user -u hermes-gateway.service -f` |
