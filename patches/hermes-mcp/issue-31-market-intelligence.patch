@@ -1,0 +1,225 @@
+--- /dev/null	2026-05-29 21:42:22.317822620 -0400
++++ /tmp/vulcan/issue31/market_intelligence.py	2026-05-30 18:31:50.532255492 -0400
+@@ -0,0 +1,195 @@
++#!/usr/bin/env python3
++
++from __future__ import annotations
++
++import json
++import re
++import urllib.parse
++import urllib.request
++from datetime import datetime
++from zoneinfo import ZoneInfo
++
++POLYMARKET_API = "https://gamma-api.polymarket.com"
++USER_AGENT = "HermesMarketIntelligence/1.0"
++STOPWORDS = {"and", "the", "what", "does", "market", "think", "about", "will"}
++
++
++def _fetch_json(url: str, params: dict[str, object], timeout: int = 5) -> list[dict]:
++    query = urllib.parse.urlencode(params)
++    request = urllib.request.Request(
++        f"{url}?{query}",
++        headers={"User-Agent": USER_AGENT},
++    )
++    with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
++        return json.loads(response.read().decode("utf-8"))
++
++
++def _topic_tokens(topic: str) -> set[str]:
++    tokens = set()
++    normalized = topic.strip().lower()
++    if normalized:
++        tokens.add(normalized)
++    for token in re.findall(r"[a-z0-9$]+", normalized):
++        if len(token) >= 3 or token.isdigit():
++            if token not in STOPWORDS:
++                tokens.add(token)
++    return tokens
++
++
++def _normalize_list(value: object) -> list:
++    if isinstance(value, list):
++        return value
++    if isinstance(value, str):
++        try:
++            decoded = json.loads(value)
++            if isinstance(decoded, list):
++                return decoded
++        except json.JSONDecodeError:
++            return []
++    return []
++
++
++def _haystack(event: dict, market: dict) -> str:
++    parts: list[str] = [
++        str(event.get("title") or ""),
++        str(event.get("slug") or ""),
++        str(event.get("description") or ""),
++        str(market.get("question") or ""),
++        str(market.get("slug") or ""),
++        str(market.get("description") or ""),
++    ]
++
++    tags = event.get("tags") or market.get("tags") or []
++    if isinstance(tags, list):
++        for tag in tags:
++            if isinstance(tag, dict):
++                parts.append(
++                    str(tag.get("label") or tag.get("name") or tag.get("slug") or "")
++                )
++            else:
++                parts.append(str(tag))
++
++    outcomes = _normalize_list(market.get("outcomes"))
++    if outcomes:
++        parts.extend(str(outcome) for outcome in outcomes)
++
++    return " ".join(parts).lower()
++
++
++def _match_score(event: dict, market: dict, topic_tokens: set[str]) -> int:
++    haystack = _haystack(event, market)
++    return sum(1 for token in topic_tokens if token in haystack)
++
++
++def _yes_probability(market: dict) -> float | None:
++    outcomes = _normalize_list(market.get("outcomes"))
++    prices = _normalize_list(market.get("outcomePrices"))
++    if not outcomes or not prices:
++        return None
++
++    for index, outcome in enumerate(outcomes):
++        if str(outcome).strip().lower() == "yes" and index < len(prices):
++            try:
++                return round(float(prices[index]), 3)
++            except (TypeError, ValueError):
++                return None
++    return None
++
++
++def _volume_usd(market: dict) -> float:
++    try:
++        return float(market.get("volume") or 0.0)
++    except (TypeError, ValueError):
++        return 0.0
++
++
++def get_market_intelligence_data(topics: list[str] | None = None, limit: int = 5) -> dict:
++    if not topics:
++        topics = ["bitcoin"]
++
++    safe_limit = max(1, min(int(limit), 10))
++    fetch_limit = max(50, min(safe_limit * 20, 200))
++    topic_tokens = set()
++    for topic in topics:
++        topic_tokens.update(_topic_tokens(topic))
++
++    deduped: dict[str, dict] = {}
++
++    try:
++        events = _fetch_json(
++            f"{POLYMARKET_API}/events",
++            {
++                "limit": fetch_limit,
++                "active": "true",
++                "closed": "false",
++                "archived": "false",
++                "tag_slug": "crypto",
++            },
++        )
++    except Exception as exc:  # noqa: BLE001
++        return {
++            "as_of": datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %I:%M %p ET"),
++            "topics_queried": topics,
++            "top_signals": [],
++            "source_note": "Polymarket public data (read-only). Predyx API integration pending when available.",
++            "fetch_errors": [{"source": "Polymarket", "error": str(exc)}],
++        }
++
++    for event in events:
++        if not isinstance(event, dict):
++            continue
++        if not event.get("active", True) or event.get("closed") or event.get("archived"):
++            continue
++
++        for market in event.get("markets") or []:
++            if not isinstance(market, dict):
++                continue
++            if not market.get("active", True) or market.get("closed") or market.get("archived"):
++                continue
++
++            score = _match_score(event, market, topic_tokens)
++            if score <= 0:
++                continue
++
++            yes_probability = _yes_probability(market)
++            if yes_probability is None:
++                continue
++
++            title = str(market.get("question") or event.get("title") or "").strip()
++            slug = str(market.get("slug") or event.get("slug") or "").strip()
++            if not title or not slug:
++                continue
++
++            signal = {
++                "title": title,
++                "probability_yes": yes_probability,
++                "volume_usd": _volume_usd(market) or _volume_usd(event),
++                "resolution_date": market.get("endDate") or event.get("endDate"),
++                "source": "Polymarket",
++                "url": f"https://polymarket.com/event/{event.get('slug') or slug}",
++                "match_score": score,
++            }
++
++            existing = deduped.get(slug)
++            if not existing or (signal["match_score"], signal["volume_usd"]) > (
++                existing["match_score"],
++                existing["volume_usd"],
++            ):
++                deduped[slug] = signal
++
++    top_signals = sorted(
++        deduped.values(),
++        key=lambda signal: (signal["match_score"], signal["volume_usd"]),
++        reverse=True,
++    )[:safe_limit]
++
++    for signal in top_signals:
++        signal.pop("match_score", None)
++
++    return {
++        "as_of": datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %I:%M %p ET"),
++        "topics_queried": topics,
++        "top_signals": top_signals,
++        "source_note": "Polymarket public data (read-only). Predyx API integration pending when available.",
++        "fetch_errors": [],
++    }
+--- /tmp/vulcan/issue31/server.py.orig	2026-05-30 18:36:08.437771627 -0400
++++ /tmp/vulcan/issue31/server.py	2026-05-30 18:30:25.949634046 -0400
+@@ -20,6 +20,7 @@
+ from datetime import datetime
+ from pathlib import Path
+ 
++from market_intelligence import get_market_intelligence_data
+ from mcp.server.fastmcp import FastMCP
+ from mcp.server.transport_security import TransportSecuritySettings
+ from starlette.middleware.base import BaseHTTPMiddleware
+@@ -151,6 +152,16 @@
+ 
+ 
+ @mcp.tool()
++def get_market_intelligence(topics: list[str] | None = None, limit: int = 5) -> dict:
++    """
++    Fetch live prediction market intelligence for BTC treasury decision support.
++
++    Sources: Polymarket public feed (primary). Read-only. No auth. No positions.
++    """
++    return get_market_intelligence_data(topics=topics, limit=limit)
++
++
++@mcp.tool()
+ def get_morning_briefing() -> str:
+     """
+     Retrieve the latest Hermes morning briefing.

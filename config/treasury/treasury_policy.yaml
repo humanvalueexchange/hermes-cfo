@@ -1,0 +1,20 @@
+intelligence_layer:
+  phase: 0
+  status: active
+  mode: advisory_only
+  objective: Surface read-only prediction-market signals for BTC treasury context without taking positions.
+  allowed_actions:
+    - Fetch public prediction-market data for bitcoin and lightning topics.
+    - Rank and summarize signals in Hermes morning briefing output.
+    - Attribute all intelligence to public data sources with timestamps.
+  prohibited_actions:
+    - Create accounts on prediction-market venues.
+    - Authenticate to third-party trading or prediction APIs.
+    - Open positions, place orders, or spend sats.
+    - Recommend acting on signals without explicit CEO approval.
+  primary_source:
+    name: Polymarket public API
+    mode: read_only
+  future_source:
+    name: Predyx public API
+    status: pending_availability

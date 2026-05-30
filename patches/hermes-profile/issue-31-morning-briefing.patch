@@ -1,0 +1,82 @@
+--- /tmp/vulcan/issue31/morning_briefing.py.orig	2026-05-30 18:36:08.437771627 -0400
++++ /tmp/vulcan/issue31/morning_briefing.py	2026-05-30 18:32:56.871064025 -0400
+@@ -2,7 +2,40 @@
+ 
+ from __future__ import annotations
+ 
+-from common import BRIEFINGS_DIR, build_btc_forecast, get_last_cron_output, iso_now, today_str
++import sys
++from pathlib import Path
++
++from common import BRIEFINGS_DIR, build_btc_forecast, get_last_cron_output, today_str
++
++MCP_DIR = Path.home() / "hermes-v2" / "scripts" / "hermes_mcp"
++if str(MCP_DIR) not in sys.path:
++    sys.path.insert(0, str(MCP_DIR))
++
++from market_intelligence import get_market_intelligence_data
++
++
++def print_intelligence_snapshot() -> None:
++    snapshot = get_market_intelligence_data(topics=["bitcoin", "lightning"], limit=3)
++    signals = snapshot.get("top_signals", [])
++
++    print("5. Intelligence Snapshot")
++    if not signals:
++        print("- FAIL — no qualifying BTC prediction market signals returned.")
++    else:
++        for index, signal in enumerate(signals, start=1):
++            probability = signal.get("probability_yes")
++            probability_text = f"{probability:.1%}" if isinstance(probability, (int, float)) else "n/a"
++            volume_text = f"${float(signal.get('volume_usd') or 0):,.0f}"
++            resolution = signal.get("resolution_date") or "n/a"
++            print(
++                f"- {index}. {signal.get('title', 'Untitled market')} — YES {probability_text} | "
++                f"volume {volume_text} | resolves {resolution}"
++            )
++        print(f"- Source: {snapshot.get('source_note')} as of {snapshot.get('as_of')}")
++
++    fetch_errors = snapshot.get("fetch_errors") or []
++    for error in fetch_errors:
++        print(f"- Warning — {error.get('source', 'source')} fetch issue: {error.get('error', 'unknown error')}")
+ 
+ 
+ def main() -> int:
+@@ -21,9 +54,10 @@
+         print("2. Current system state: Partial — trade-lane reports were not all generated.")
+         print("3. Algorithmic trading status: FAIL — overnight artifact unavailable.")
+         print("4. BTC forecast for 09:30 ET: FAIL — briefing artifact chain incomplete.")
+-        print("5. New skill learned last night: Out of scope for the mandatory trade lane.")
+-        print(f"6. Blockers / CTO flags: Missing files -> {', '.join(str(path) for path in missing)}")
+-        print("7. Next 3 actions today: rerun cron bootstrap; inspect Hermes cron output; verify local artifact generation.")
++        print_intelligence_snapshot()
++        print("6. New skill learned last night: Out of scope for the mandatory trade lane.")
++        print(f"7. Blockers / CTO flags: Missing files -> {', '.join(str(path) for path in missing)}")
++        print("8. Next 3 actions today: rerun cron bootstrap; inspect Hermes cron output; verify local artifact generation.")
+         return 1
+ 
+     forecast = build_btc_forecast()
+@@ -51,7 +85,9 @@
+         f"direction {forecast.direction}; confidence {forecast.confidence}."
+     )
+     print("")
+-    print("5. New skill learned last night")
++    print_intelligence_snapshot()
++    print("")
++    print("6. New skill learned last night")
+     skill_output = get_last_cron_output("hermes-nightly-skill") or ""
+     first_line = next((ln.strip() for ln in skill_output.splitlines() if ln.strip()), "")
+     if first_line.startswith("PASS"):
+@@ -63,10 +99,10 @@
+     else:
+         print("- UNKNOWN — no nightly-skill output found")
+     print("")
+-    print("6. Blockers / CTO flags")
++    print("7. Blockers / CTO flags")
+     print("- PASS — no overnight artifact blockers detected in the mandatory lane.")
+     print("")
+-    print("7. Next 3 actions today")
++    print("8. Next 3 actions today")
+     print("- Review the three dated reports.")
+     print("- Compare the 09:30 ET forecast against realized market behavior.")
+     print("- Keep the knowledge lane deferred until the trade lane proves repeatable.")

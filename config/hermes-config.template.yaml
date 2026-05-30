@@ -494,6 +494,7 @@ mcp_servers:
       include:
       - get_node_diagnostic
       - get_btc_forecast
+      - get_market_intelligence
       - get_morning_briefing
       - get_client_context
       - suggest_backlog_issue
