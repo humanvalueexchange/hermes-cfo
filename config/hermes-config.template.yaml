@@ -194,7 +194,7 @@ curator:
   stale_after_days: 30
 dashboard:
   theme: default
-default-model: nemotron-3-super-120b-a12b
+default-model: gemma2:27b
 delegation:
   api_key: ''
   base_url: ''
