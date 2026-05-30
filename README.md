@@ -19,12 +19,18 @@ Hermes monitors balances, enforces treasury policy, reports to the CEO, and coor
 
 | Role | Model | Purpose |
 |---|---|---|
-| Conductor | `mistral-small:24b` | Orchestrates the collective, routes queries |
-| Executor | `nemotron-3-nano:30b` | Tool calls, data retrieval, action execution |
-| Critic | `mistral-small:24b` | Risk review, veto authority, sanity checks |
-| Clarifier | `mistral-small:24b` | Resolves ambiguity before execution |
+| Conductor | `mistral-small:24b` | Orchestrates the collective, synthesizes trade proposals |
+| Research | `mistral-small:24b` | Market analysis, price action, strategy research |
+| Critic | `gemma2:27b` | Risk review, veto authority (`CRITIC:APPROVE` / `CRITIC:VETO`) |
+| Execution | `nemotron-3-nano:30b` | Position sizing, fee calculations, code generation |
 
 All models run via **Ollama** on the DGX Spark (native binary, systemd-managed).
+
+**Decision flow (mandatory for all trade decisions):**
+```
+Research → Conductor → Critic → Execution (only on CRITIC:APPROVE)
+```
+A `CRITIC:VETO` terminates the flow. No override.
 
 ---
 
@@ -40,18 +46,19 @@ CEO (Hans) ──Telegram──▶ Hermes Gateway
                               │
               ┌───────────────┼───────────────┐
               ▼               ▼               ▼
-         Executor          Critic          Clarifier
-    nemotron-3-nano:30b  mistral-small   mistral-small
-    (Tools & Actions)    (Risk/Veto)     (Disambiguation)
+         Research          Critic          Execution
+    mistral-small:24b   gemma2:27b    nemotron-3-nano:30b
+    (Analysis/Strategy) (Risk/Veto)   (Math/Code/Audit)
               │
               ▼
          MCP Tools
-    ┌──────────────────┐
-    │ BTC price feed   │
-    │ Mattermost posts │
-    │ Treasury reports │
-    │ Mercury bridge   │
-    └──────────────────┘
+    ┌──────────────────────┐
+    │ get_node_diagnostic  │
+    │ get_btc_forecast     │
+    │ get_morning_briefing │
+    │ suggest_backlog_issue│
+    │ vote_backlog_issue   │
+    └──────────────────────┘
 ```
 
 ---
@@ -75,16 +82,33 @@ CEO (Hans) ──Telegram──▶ Hermes Gateway
 
 ```
 hermes-cfo/
-├── README.md                    ← you are here
+├── README.md                         ← you are here
 ├── docs/
-│   ├── SOUL.md                  ← constitutional rules — what Hermes will/won't do
-│   ├── architecture.md          ← detailed system design
-│   └── model-selection.md       ← why these models, why this stack
+│   └── SOUL.md                       ← full Hermes identity, rules, HVE vision
 ├── config/
-│   └── hermes-config.template.yaml   ← config template (no secrets)
+│   ├── hermes-config.template.yaml   ← config template (secrets as ${PLACEHOLDERS})
+│   └── hermes-env.template           ← .env template — what secrets are needed
+├── src/
+│   └── hooks/
+│       └── inject-market-data.sh     ← pre-LLM hook: live BTC price injection
 └── scripts/
-    └── install.sh               ← bootstrap Hermes on a fresh DGX Spark
+    ├── hermes-install.sh             ← bootstrap on fresh DGX Spark
+    └── hermes-deploy.sh              ← deploy config changes to live runtime
 ```
+
+---
+
+## Engineering Team (v3.0)
+
+| Role | Agent | Model |
+|---|---|---|
+| Chief Architect / CTO | Claude | Sonnet 4.6 (GitHub Copilot CLI, DGX Spark) |
+| Prime Developer | Vulcan | GPT-5.4 (G16 / WSL Ubuntu) |
+| Lead Test Engineer | Grok Build | Grok 4.3 (xAI Grok CLI, DGX Spark) |
+
+**Workflow:** Claude specs → Vulcan builds → Grok Build tests on DGX Spark → Claude merges → Deploy via `hermes-deploy.sh`
+
+All design disagreements are filed as GitHub issues — never resolved quietly.
 
 ---
 

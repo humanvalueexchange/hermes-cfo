@@ -1,0 +1,17 @@
+# Hermes Environment Variables — Template
+# Copy to ~/.hermes-mcp.env and fill in your values
+# NEVER commit the filled-in version to any repository
+
+# MCP server authentication key
+# Generate a new key: openssl rand -base64 32
+HVE_MCP_API_KEY=your-mcp-api-key-here
+
+# Ollama endpoint (default: local)
+OLLAMA_HOST=http://localhost:11434
+
+# Optional: override model defaults
+# HERMES_DEFAULT_MODEL=mistral-small:24b
+# HERMES_CONDUCTOR_MODEL=mistral-small:24b
+# HERMES_RESEARCH_MODEL=mistral-small:24b
+# HERMES_CRITIC_MODEL=gemma2:27b
+# HERMES_EXECUTION_MODEL=nemotron-3-nano:30b
