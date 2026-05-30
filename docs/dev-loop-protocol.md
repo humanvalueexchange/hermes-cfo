@@ -160,7 +160,7 @@ Run 5: PASS/FAIL — [reason]
 |---|---|
 | `scripts/test-tool-enforcement.sh` | Acceptance gate — must be 9/9 before any merge |
 | `scripts/test-vulcan-connectivity.sh` | Vulcan pre-flight check |
-| `docs/SOUL.md` | Hermes identity + rules (reloaded every message) |
+| `dotfiles/SOUL.md` | Hermes identity + rules (reloaded every message) |
 | `CONTRIBUTING.md` | This loop in condensed form |
 
 ---

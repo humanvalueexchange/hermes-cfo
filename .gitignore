@@ -7,7 +7,63 @@ __pycache__/
 .Python
 *.egg-info/
 
-# Runtime / logs  
+# Runtime / logs
 logs/
 *.log
 *.bak
+
+# ── Secrets & credentials (NEVER commit these) ───────────────────────────────
+# Environment files with real values
+.env
+.env.*
+!.env.template
+!*-env.template
+*.env
+
+# API keys / tokens
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.priv
+id_rsa
+id_ed25519
+id_ecdsa
+*.pub
+
+# MCP / Hermes live configs (contain real keys)
+mcp/*.env
+hermes-mcp.env
+.hermes-mcp.env
+config/hermes-config.yaml
+# Allow the template — never the live copy
+!config/hermes-config.template.yaml
+
+# Tailscale / VPN
+tailscale*.conf
+wg*.conf
+*.wg
+
+# SSH
+.ssh/
+authorized_keys
+known_hosts
+
+# ── OS / editor noise ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Test / build artefacts ────────────────────────────────────────────────────
+.pytest_cache/
+htmlcov/
+.coverage
+dist/
+build/

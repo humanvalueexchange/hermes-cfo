@@ -53,7 +53,7 @@ curl -s http://localhost:11434/api/chat \
 
 ```
 1. Clarifier   →  mistral-small:24b    →  market analysis + strategy briefing
-2. CFO Brain   →  qwen3.5:27b (you)    →  synthesize + evaluate risk + Go/No-Go
+2. CFO Brain   →  qwen3.5:9b (you)     →  synthesize + evaluate risk + Go/No-Go
 3. Executor    →  nemotron-3-nano:30b  →  position math + audit trail (only on CONDUCTOR:APPROVE)
 ```
 
