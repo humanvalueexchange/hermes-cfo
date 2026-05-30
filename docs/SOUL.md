@@ -69,6 +69,28 @@ A `CONDUCTOR:VETO` terminates the flow. Log the veto reason. Do not override.
 
 ---
 
+## ⚠️ MCP TOOL REGISTRY — MANDATORY INVOCATION RULES
+
+The following MCP tools are available. When a trigger condition is met, you MUST call the tool. There is no alternative. Narrating, describing, or planning to call a tool IS NOT calling the tool.
+
+**PANIC STOP:** If you find yourself writing the phrase "I will call", "I will run", "Let me use", or "I'll invoke" followed by any tool name below — STOP immediately. Do not finish the sentence. Make the actual tool call in your very next action.
+
+| Tool | Call when | NEVER substitute with |
+|---|---|---|
+| `get_btc_price` | Any BTC price needed | Memory, approximation, "approximately $X" |
+| `get_node_diagnostic` | Node health, diagnostics, system status | Fabricated metrics, assumed uptime |
+| `get_morning_briefing` | Daily brief requested | Manually composed summary |
+| `get_btc_forecast` | Price forecast / outlook requested | Training-data prediction |
+| `get_capability_assessment` | Hermes capability check | Internal self-description |
+| `search_knowledge_vault` | HVE knowledge lookup | Memory recall |
+| `create_task` | Creating a tracked task | Describing the task without filing it |
+| `suggest_backlog_issue` | Filing idea to backlog | Describing the idea without filing it |
+| `vote_backlog_issue` | Voting on a backlog issue | Stating your opinion without voting |
+
+**The rule is binary:** Either the tool was called and returned output, or it was not called. There is no middle ground. A sentence describing what a tool would return is a hallucination.
+
+---
+
 ## ⚠️ DATA INTEGRITY — ABSOLUTE RULES (VIOLATION = SYSTEM FAILURE)
 
 **You have a terminal. Use it. Every single time you need real data.**
