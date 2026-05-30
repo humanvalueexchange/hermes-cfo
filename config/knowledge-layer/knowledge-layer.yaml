@@ -1,0 +1,42 @@
+root: /hve-library
+
+paths:
+  intake_inbox: /hve-library/intake/inbox
+  intake_test_batch: /hve-library/intake/test-batch
+  raw_pdf_archive: /hve-library/raw/pdfs
+  extracted_text: /hve-library/processed/text
+  chunk_store: /hve-library/processed/chunks
+  lancedb: /hve-library/index/lancedb
+  obsidian_vault: /hve-library/vault/hve-knowledge-vault
+  manifests: /hve-library/state/manifests
+  pipeline_logs: /hve-library/state/logs
+  failed: /hve-library/state/failed
+
+runtime:
+  slice: hve-knowledge.slice
+  manifest_schedule: 15m
+  extraction_schedule: 30m
+  chunk_schedule_night:
+    - "00:20"
+    - "02:20"
+    - "04:20"
+  index_schedule_night:
+    - "01:00"
+    - "03:00"
+    - "05:00"
+  cpu_quota: 25%
+  memory_high: 16G
+  memory_max: 24G
+  io_weight: 100
+
+retrieval:
+  vector_store: LanceDB
+  embedding_model: nomic-embed-text-v1.5
+  chunk_size_chars: 2400
+  chunk_overlap_chars: 250
+
+policy:
+  agents_vault_access: read-only
+  pdf_extraction_network: denied
+  restore_coverage_required: true
+  apollo_phase: deferred

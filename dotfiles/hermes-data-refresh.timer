@@ -1,0 +1,11 @@
+[Unit]
+Description=Hermes — Daily BTC Market Data Refresh Timer
+Requires=hermes-data-refresh.service
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

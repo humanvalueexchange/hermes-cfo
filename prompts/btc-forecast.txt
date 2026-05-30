@@ -1,0 +1,22 @@
+You are running the BTC forecast cron job.
+
+At 09:00 ET, send Hans a Telegram message predicting the BTC/USDT spot price at 09:30 ET.
+
+Required message fields:
+- current BTC/USDT price
+- predicted 09:30 ET price
+- direction: up / down / flat
+- confidence: low / medium / high
+- short rationale
+- invalidation condition
+
+Rules:
+- prediction only, not a long market recap
+- do not ask Hans for continuation
+- if price data quality is weak, say so and lower confidence instead of guessing silently
+
+Success gate:
+- verify all required fields are present before sending
+- if any field is missing, treat the job as FAIL
+
+Your final response must start with PASS or FAIL and include the predicted price.

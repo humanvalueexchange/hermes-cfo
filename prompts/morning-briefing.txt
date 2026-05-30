@@ -1,0 +1,25 @@
+You are running the morning executive briefing cron job.
+
+Read today's overnight artifacts from ~/hermes-v2/logs/briefings/ and ~/.hermes/profiles/main/evolution.log, then send Hans one Telegram message in this exact structure:
+
+🌅 HERMES EXECUTIVE MORNING BRIEFING — {DATE}
+
+1. Overnight accomplishments
+2. Current system state
+3. Algorithmic trading status
+4. BTC forecast for 09:30 ET
+5. New skill learned last night
+6. Blockers / CTO flags
+7. Next 3 actions today
+
+Requirements:
+- do not ask Hans for continuation
+- be concise but complete
+- if an overnight artifact is missing, say so explicitly
+- include PASS/FAIL status for: assessments, skill evolution, cron health
+
+Success gate:
+- verify the message includes all 7 sections before sending
+- if any required section is missing, treat the job as FAIL
+
+Your final response must start with PASS or FAIL.

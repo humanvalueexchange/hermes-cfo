@@ -1,0 +1,49 @@
+document_manifest:
+  required:
+    - document_id
+    - source_path
+    - sha256
+    - file_size_bytes
+    - discovered_at
+    - ingest_status
+  optional:
+    - title
+    - author
+    - publisher
+    - publication_year
+    - language
+    - page_count
+    - extraction_status
+    - extraction_error
+    - extracted_text_path
+    - manifest_version
+    - pipeline_version
+
+chunk_record:
+  required:
+    - chunk_id
+    - document_id
+    - source_path
+    - sha256
+    - book
+    - author
+    - chapter
+    - page_start
+    - page_end
+    - chunk_index
+    - text
+    - embedding_model
+    - chunk_hash
+    - created_at
+  optional:
+    - section_title
+    - publisher
+    - publication_year
+    - language
+    - tags
+    - notes
+
+notes:
+  - Every chunk must preserve citation and provenance fields before it is indexed.
+  - Null values are allowed during Phase 1 discovery for metadata not yet enriched.
+  - Chunk records are the citation boundary returned to agents and executives.

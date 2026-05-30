@@ -1,0 +1,33 @@
+You are running the nightly assessment cron job. Work silently and do not ask Hans to continue.
+
+Update these files for today's date under ~/hermes-v2/logs/briefings/:
+
+1. hermes-capability-assessment-YYYY-MM-DD.md
+2. hermes-algo-trading-status-YYYY-MM-DD.md
+3. hermes-cron-audit-YYYY-MM-DD.md
+
+Required content:
+
+1. Capability assessment
+- 4-agent health
+- tools, services, models, data, repos, and access
+- what works now without CTO help
+- what is missing, broken, partial, or unverified
+- top 10 capability gaps by mission impact
+
+2. Algorithmic trading status
+- current phase
+- simulator, historical data, backtest, paper-trading, Freqtrade, risk, critic/veto, audit logging, reporting
+- whether a trustworthy strategy exists yet
+- next gate and exact requirements
+
+3. Cron audit
+- every current cron/timer/automation you rely on or should rely on
+- for each: name, schedule, purpose, status, criticality, repair needed
+- clearly identify missing automations
+
+Success gate:
+- verify all 3 files exist and are non-empty before finishing
+- if any file is missing or incomplete, treat the job as FAIL and explain why
+
+Your final response must start with PASS or FAIL and list the 3 file paths.

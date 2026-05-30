@@ -1,0 +1,24 @@
+[Unit]
+Description=HVE Hermes MCP Server
+Documentation=https://github.com/HansHWestphal/hermes-v2
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/hermes-v2
+# Kill any orphaned process holding port 8765 before starting (prevents crash loop)
+ExecStartPre=-/usr/bin/fuser -k 8765/tcp
+ExecStart=%h/.hermes-mcp-venv/bin/python %h/hermes-v2/scripts/hermes_mcp/server.py
+EnvironmentFile=-%h/.hermes-mcp.env
+Environment="HVE_MCP_HOST=0.0.0.0"
+Environment="HVE_MCP_PORT=8765"
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hermes-mcp
+
+[Install]
+WantedBy=default.target

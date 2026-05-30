@@ -1,0 +1,16 @@
+[Unit]
+Description=Hermes Telegram Live Log Watcher
+After=hermes-gateway.service
+Wants=hermes-gateway.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/hans/hermes-v2/scripts/telegram-live-log.py
+WorkingDirectory=/home/hans/hermes-v2
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

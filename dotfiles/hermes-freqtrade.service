@@ -1,0 +1,18 @@
+[Unit]
+Description=Hermes Freqtrade — BTC/USDT Paper Trading
+After=network-online.target hermes-gateway.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/hans/freqtrade
+ExecStart=/home/hans/freqtrade/.venv/bin/freqtrade trade \
+    --config /home/hans/freqtrade/user_data/config-kraken-paper.json \
+    --strategy BTCOpeningRangeScalp \
+    --logfile /home/hans/freqtrade/user_data/logs/freqtrade.log
+Restart=on-failure
+RestartSec=30
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Install]
+WantedBy=default.target
