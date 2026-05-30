@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-DGX="${1:-192.168.1.10}"
+DGX="${1:-100.85.145.63}"  # DGX Spark Tailscale IP (LAN fallback: 192.168.1.10)
 PASS=0
 FAIL=0
 
@@ -21,7 +21,7 @@ info() { echo -e "${BLUE}→${NC} $1"; }
 
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║   Vulcan → Hermes Connectivity Check                         ║"
-echo "║   Target DGX Spark: $DGX                              ║"
+echo "║   Target DGX Spark: $DGX                           ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
