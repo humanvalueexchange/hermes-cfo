@@ -7,7 +7,7 @@
 
 | Component | Version | Updated | Notes |
 |---|---|---|---|
-| **hermes-agent** | `0.15.2` | 2026-05-29 | v2026.5.29.2 tag |
+| **hermes-agent** | `0.15.2` | 2026-05-30 | v2026.5.29.2 tag — confirmed on 0.15.2 |
 | **qwen3.5:27b** | Ollama latest | 2026-05-30 | Conductor / CFO Brain — 262K context |
 | **mistral-small:24b** | Ollama latest | 2026-05-29 | Clarifier / Research — 131K context |
 | **nemotron-3-nano:30b** | Ollama latest | 2026-05-29 | Executor — 131K context |
