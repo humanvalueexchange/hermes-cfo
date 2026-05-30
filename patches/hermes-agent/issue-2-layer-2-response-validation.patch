@@ -1,0 +1,111 @@
+diff --git a/agent/conversation_loop.py b/agent/conversation_loop.py
+index 92796b65c..f8fb278c2 100644
+--- a/agent/conversation_loop.py
++++ b/agent/conversation_loop.py
+@@ -72,6 +72,31 @@ from utils import base_url_host_matches, env_var_enabled
+ 
+ logger = logging.getLogger(__name__)
+ 
++_TOOL_NARRATION_PATTERN = re.compile(
++    r"\b(?:I will|I'll|Let me)\s+(?:run|call|invoke|use)\s+"
++    r"(?P<tool_name>"
++    r"get_btc_price|get_node_diagnostic|get_morning_briefing|"
++    r"get_btc_forecast|get_capability_assessment|search_knowledge_vault|"
++    r"create_task|suggest_backlog_issue|vote_backlog_issue"
++    r")\b",
++    re.IGNORECASE,
++)
++
++
++def _detect_narrated_tool_retry(text: Any, valid_tool_names: set[str]) -> Optional[str]:
++    """Return the narrated tool name when visible text names a valid tool."""
++    if not isinstance(text, str) or not text.strip() or not valid_tool_names:
++        return None
++
++    match = _TOOL_NARRATION_PATTERN.search(text)
++    if not match:
++        return None
++
++    tool_name = match.group("tool_name")
++    if tool_name not in valid_tool_names:
++        return None
++    return tool_name
++
+ 
+ def _ollama_context_limit_error(agent: Any, request_tokens: int) -> Optional[str]:
+     """Return a user-facing error when Ollama is loaded with too little context."""
+@@ -717,6 +742,7 @@ def run_conversation(
+     # present are surfaced in an advisory footer so the model cannot
+     # over-claim success while the file is actually unchanged on disk.
+     agent._turn_failed_file_mutations: Dict[str, Dict[str, Any]] = {}
++    agent._tool_narration_retry_count = 0
+     
+     # Record the execution thread so interrupt()/clear_interrupt() can
+     # scope the tool-level interrupt signal to THIS agent's thread only.
+@@ -3793,6 +3819,13 @@ def run_conversation(
+                 # a LATER tool round.
+                 agent._post_tool_empty_retried = False
+ 
++                while (
++                    messages
++                    and isinstance(messages[-1], dict)
++                    and messages[-1].get("_tool_narration_retry_synthetic")
++                ):
++                    messages.pop()
++
+                 messages.append(assistant_msg)
+                 agent._emit_interim_assistant_message(assistant_msg)
+ 
+@@ -3912,6 +3945,44 @@ def run_conversation(
+                 # prior housekeeping tool turn and should not silence the
+                 # final response path.
+                 agent._mute_post_response = False
++
++                narrated_tool_name = _detect_narrated_tool_retry(
++                    final_response,
++                    set(getattr(agent, "valid_tool_names", []) or []),
++                )
++                if narrated_tool_name is not None:
++                    if getattr(agent, "_tool_narration_retry_count", 0) < 1:
++                        agent._tool_narration_retry_count += 1
++                        logger.warning(
++                            "NARRATION_DETECTED: %s — injecting retry (session=%s api_call=%s)",
++                            narrated_tool_name,
++                            getattr(agent, "session_id", None) or "-",
++                            api_call_count,
++                        )
++                        narration_msg = agent._build_assistant_message(
++                            assistant_message, finish_reason
++                        )
++                        narration_msg["_tool_narration_retry_synthetic"] = True
++                        messages.append(narration_msg)
++                        messages.append(
++                            {
++                                "role": "user",
++                                "content": (
++                                    f"You described calling {narrated_tool_name} but "
++                                    "did not call it. Call it now. No narrative."
++                                ),
++                                "_tool_narration_retry_synthetic": True,
++                            }
++                        )
++                        agent._session_messages = messages
++                        continue
++
++                    logger.error(
++                        "ENFORCEMENT_FAILED: %s — retry also narrated (session=%s api_call=%s)",
++                        narrated_tool_name,
++                        getattr(agent, "session_id", None) or "-",
++                        api_call_count,
++                    )
+                 
+                 # Check if response only has think block with no actual content after it
+                 if not agent._has_content_after_think_block(final_response):
+@@ -4227,6 +4298,7 @@ def run_conversation(
+                         messages[-1].get("_thinking_prefill")
+                         or messages[-1].get("_empty_recovery_synthetic")
+                         or messages[-1].get("_empty_terminal_sentinel")
++                        or messages[-1].get("_tool_narration_retry_synthetic")
+                     )
+                 ):
+                     messages.pop()
