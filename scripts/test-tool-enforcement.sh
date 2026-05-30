@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-tool-enforcement.sh — Verify Hermes Platonic 3-model stack tool-use behavior
-# Tests: conductor (qwen3.5:27b) and executor (nemotron-3-nano:30b) MUST call tools.
+# Tests: conductor (qwen3.5:9b) and executor (nemotron-3-nano:30b) MUST call tools.
 #        clarifier (mistral-small:24b) MUST call tools when asked.
 #
 # Run: bash scripts/test-tool-enforcement.sh
@@ -91,10 +91,10 @@ else:
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 1: Conductor (qwen3.5:27b) — MUST call tools
+# SECTION 1: Conductor (qwen3.5:9b) — MUST call tools
 # ═══════════════════════════════════════════════════════════════════════════════
-echo "── Section 1: Conductor (qwen3.5:27b) ───────────────────────────"
-CONDUCTOR="qwen3.5:27b"
+echo "── Section 1: Conductor (qwen3.5:9b) ───────────────────────────"
+CONDUCTOR="qwen3.5:9b"
 
 if ! model_available "$CONDUCTOR"; then
   warn "Model not loaded: $CONDUCTOR"
@@ -217,6 +217,6 @@ if [ $FAIL -gt 0 ]; then
   exit 1
 else
   echo "✅ All $PASS tests passed. Issue #2 acceptance criteria met."
-  echo "   Platonic 3-model stack: qwen3.5:27b | mistral-small:24b | nemotron-3-nano:30b"
+  echo "   Platonic 3-model stack: qwen3.5:9b | mistral-small:24b | nemotron-3-nano:30b"
   exit 0
 fi

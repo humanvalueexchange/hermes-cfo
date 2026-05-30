@@ -380,15 +380,15 @@ prompt_caching:
 providers:
   ollama:
     api: http://localhost:11434/v1
-    default_model: qwen2.5:14b
+    default_model: qwen3.5:9b
     models:
-    - qwen2.5:14b
+    - qwen3.5:9b
     - mistral-small:24b
-    - gemma2:27b
     - nemotron-3-nano:30b
+    - gemma2:27b
     - llama3.3:70b-instruct-q3_K_M
     - qwen3.5:27b
-    - qwen3.5:9b
+    - qwen2.5:14b
     - gpt-oss:120b
     - nemotron-3-super:120b
     name: Ollama
@@ -496,6 +496,8 @@ mcp_servers:
       - get_btc_forecast
       - get_morning_briefing
       - get_client_context
+      - get_market_intelligence
+      - get_capability_assessment
       - suggest_backlog_issue
       - vote_backlog_issue
 tts:

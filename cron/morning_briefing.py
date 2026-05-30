@@ -21,7 +21,8 @@ def main() -> int:
         print("2. Current system state: Partial — trade-lane reports were not all generated.")
         print("3. Algorithmic trading status: FAIL — overnight artifact unavailable.")
         print("4. BTC forecast for 09:30 ET: FAIL — briefing artifact chain incomplete.")
-        print("5. New skill learned last night: Out of scope for the mandatory trade lane.")        print(f"6. Blockers / CTO flags: Missing files -> {', '.join(str(path) for path in missing)}")
+        print("5. New skill learned last night: Out of scope for the mandatory trade lane.")
+        print(f"6. Blockers / CTO flags: Missing files -> {', '.join(str(path) for path in missing)}")
         print("7. Next 3 actions today: rerun cron bootstrap; inspect Hermes cron output; verify local artifact generation.")
         return 1
 

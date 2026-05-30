@@ -15,17 +15,17 @@ fi
 
 mkdir -p "${REPO_DIR}/logs/briefings"
 mkdir -p "${HERMES_HOME}/scripts"
-install -m 755 "${REPO_DIR}/scripts/hermes_cron/common.py" "${HERMES_HOME}/scripts/common.py"
-install -m 755 "${REPO_DIR}/scripts/hermes_cron/nightly_assessment.py" "${HERMES_HOME}/scripts/nightly_assessment.py"
-install -m 755 "${REPO_DIR}/scripts/hermes_cron/morning_briefing.py" "${HERMES_HOME}/scripts/morning_briefing.py"
-install -m 755 "${REPO_DIR}/scripts/hermes_cron/btc_forecast.py" "${HERMES_HOME}/scripts/btc_forecast.py"
+install -m 755 "${REPO_DIR}/cron/common.py" "${HERMES_HOME}/scripts/common.py"
+install -m 755 "${REPO_DIR}/cron/nightly_assessment.py" "${HERMES_HOME}/scripts/nightly_assessment.py"
+install -m 755 "${REPO_DIR}/cron/morning_briefing.py" "${HERMES_HOME}/scripts/morning_briefing.py"
+install -m 755 "${REPO_DIR}/cron/btc_forecast.py" "${HERMES_HOME}/scripts/btc_forecast.py"
 
 "${HERMES_PY}" <<'PY'
 from pathlib import Path
 import sys
 import os
 
-repo_dir = Path.home() / "hermes-v2"
+repo_dir = Path.home() / "hermes-cfo"
 sys.path.insert(0, str(Path.home() / ".hermes" / "hermes-agent"))
 
 from cron.jobs import create_job, list_jobs, remove_job

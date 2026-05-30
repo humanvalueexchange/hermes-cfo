@@ -39,9 +39,8 @@ def log_trade_cycle(symbol, direction, entry_price, stop, target, size_btc,
         "execution_math": execution_math,
         "circuit_breaker_events": circuit_breaker_events or [],
         "agents": {
-            "conductor": "qwen2.5:14b",
+            "conductor": "qwen3.5:9b",
             "research": "mistral-small:24b",
-            "critic": "gemma2:27b",
             "execution": "nemotron-3-nano:30b"
         }
     }
@@ -49,11 +48,11 @@ def log_trade_cycle(symbol, direction, entry_price, stop, target, size_btc,
 
 def log_veto(symbol, reason, consecutive_veto_count):
     write_entry({
-        "type": "CRITIC_VETO",
+        "type": "CONDUCTOR_VETO",
         "symbol": symbol,
         "veto_reason": reason,
         "consecutive_veto_count": consecutive_veto_count,
-        "critic_model": "gemma2:27b"
+        "conductor_model": "qwen3.5:9b"
     })
 
 def log_circuit_breaker(trigger, value=None, action=None):

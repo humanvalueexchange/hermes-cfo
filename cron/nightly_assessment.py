@@ -49,11 +49,10 @@ def main() -> int:
 
 Generated: {iso_now()}
 
-## 4-agent health
-- Conductor: qwen2.5:14b (configured)
-- Research: mistral-small:24b (configured)
-- Execution: nemotron-3-nano:30b (configured)
-- Critic: gemma2:27b (configured)
+## 3-agent Platonic stack
+- Conductor: qwen3.5:9b (configured)
+- Clarifier: mistral-small:24b (configured)
+- Executor: nemotron-3-nano:30b (configured)
 
 ## Tools, services, models, data, repos, and access
 ### System services

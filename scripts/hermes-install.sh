@@ -56,11 +56,11 @@ sed "s/\${HVE_MCP_API_KEY}/$HVE_MCP_API_KEY/g" \
 echo "✅ Config written to $HERMES_PROFILE/config.yaml"
 
 # ── 5. Install SOUL.md ────────────────────────────────────────────────────────
-cp "$REPO_ROOT/docs/SOUL.md" "$HERMES_PROFILE/SOUL.md"
+cp "$REPO_ROOT/dotfiles/SOUL.md" "$HERMES_PROFILE/SOUL.md"
 echo "✅ SOUL.md installed to $HERMES_PROFILE/SOUL.md"
 
 # ── 6. Install hooks ─────────────────────────────────────────────────────────
-cp "$REPO_ROOT/src/hooks/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data.sh"
+cp "$REPO_ROOT/dotfiles/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data.sh"
 chmod +x "$HERMES_HOOKS/inject-market-data.sh"
 echo "✅ Market data hook installed"
 

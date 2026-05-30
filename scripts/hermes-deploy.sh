@@ -59,9 +59,9 @@ fi
 rm -f "$NEW_CONFIG"
 
 # ── 5. SOUL.md diff ───────────────────────────────────────────────────────────
-if ! diff -q "$REPO_ROOT/docs/SOUL.md" "$HERMES_PROFILE/SOUL.md" &>/dev/null 2>&1; then
+if ! diff -q "$REPO_ROOT/dotfiles/SOUL.md" "$HERMES_PROFILE/SOUL.md" &>/dev/null 2>&1; then
   echo "→ SOUL.md changed — updating..."
-  cp "$REPO_ROOT/docs/SOUL.md" "$HERMES_PROFILE/SOUL.md"
+  cp "$REPO_ROOT/dotfiles/SOUL.md" "$HERMES_PROFILE/SOUL.md"
   echo "✅ SOUL.md updated (no restart required — loaded fresh each message)"
 else
   echo "✅ SOUL.md — no changes"
@@ -69,10 +69,10 @@ fi
 
 # ── 6. Hooks diff ─────────────────────────────────────────────────────────────
 mkdir -p "$HERMES_HOOKS"
-if ! diff -q "$REPO_ROOT/src/hooks/inject-market-data.sh" \
+if ! diff -q "$REPO_ROOT/dotfiles/inject-market-data.sh" \
             "$HERMES_HOOKS/inject-market-data.sh" &>/dev/null 2>&1; then
   echo "→ inject-market-data.sh changed — updating..."
-  cp "$REPO_ROOT/src/hooks/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data.sh"
+  cp "$REPO_ROOT/dotfiles/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data.sh"
   chmod +x "$HERMES_HOOKS/inject-market-data.sh"
   echo "✅ inject-market-data.sh updated"
   RESTART_NEEDED=true
