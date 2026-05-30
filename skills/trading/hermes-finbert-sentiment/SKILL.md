@@ -8,31 +8,31 @@ Your sole function: score BTC/crypto news headlines and provide a sentiment sign
 
 ## Tool
 
-**Binary:** `~/hermes-v2/src/tools/sentiment/finbert_sentiment.py`
+**Binary:** `~/hermes-cfo/tools/sentiment/finbert_sentiment.py`
 **Runtime:** `~/freqtrade/.venv/bin/python`
 **Model:** ProsusAI/finbert (BERT-base, financial domain, 3-class)
-**Cache:** `~/hermes-v2/src/tools/sentiment/models/`
+**Cache:** `~/hermes-cfo/tools/sentiment/models/`
 
 ### Invocation
 
 ```bash
 # Single headline
-HF_HOME=~/hermes-v2/src/tools/sentiment/models \
+HF_HOME=~/hermes-cfo/tools/sentiment/models \
   ~/freqtrade/.venv/bin/python \
-  ~/hermes-v2/src/tools/sentiment/finbert_sentiment.py --quiet \
+  ~/hermes-cfo/tools/sentiment/finbert_sentiment.py --quiet \
   "YOUR HEADLINE HERE"
 
 # Multiple headlines (one per line in a file)
-HF_HOME=~/hermes-v2/src/tools/sentiment/models \
+HF_HOME=~/hermes-cfo/tools/sentiment/models \
   ~/freqtrade/.venv/bin/python \
-  ~/hermes-v2/src/tools/sentiment/finbert_sentiment.py --quiet \
+  ~/hermes-cfo/tools/sentiment/finbert_sentiment.py --quiet \
   --batch /tmp/headlines.txt
 
 # Pipe from another tool
 echo "Bitcoin ETF approved by SEC" | \
-  HF_HOME=~/hermes-v2/src/tools/sentiment/models \
+  HF_HOME=~/hermes-cfo/tools/sentiment/models \
   ~/freqtrade/.venv/bin/python \
-  ~/hermes-v2/src/tools/sentiment/finbert_sentiment.py --quiet
+  ~/hermes-cfo/tools/sentiment/finbert_sentiment.py --quiet
 ```
 
 ### Output (JSON)
@@ -115,4 +115,4 @@ If `veto: true`, include `veto_reason` with the triggering headline and score.
 - Never skip sentiment check before a live trade
 - Never override a veto — only Hans can lift a sentiment veto via Telegram
 - Model runs fully offline — no external API calls, no data leaves the DGX
-- Model weights live at: `~/hermes-v2/src/tools/sentiment/models/hub/`
+- Model weights live at: `~/hermes-cfo/tools/sentiment/models/hub/`

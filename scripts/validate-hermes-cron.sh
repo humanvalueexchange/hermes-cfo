@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO_DIR="${HOME}/hermes-v2"
+REPO_DIR="${HOME}/hermes-cfo"
 HERMES_PY="${HOME}/.hermes/hermes-agent/venv/bin/python"
 HERMES_ROOT="${HOME}/.hermes"
 ACTIVE_PROFILE="$(cat "${HERMES_ROOT}/active_profile" 2>/dev/null || echo default)"
@@ -49,8 +49,8 @@ for name, spec in expected.items():
         errors.append(f"{name}: expected script {spec['script']}, got {actual_script}")
     if actual_no_agent != spec["no_agent"]:
         errors.append(f"{name}: expected no_agent {spec['no_agent']}, got {actual_no_agent}")
-    if actual_workdir != str(Path.home() / "hermes-v2"):
-        errors.append(f"{name}: expected workdir {Path.home() / 'hermes-v2'}, got {actual_workdir}")
+    if actual_workdir != str(Path.home() / "hermes-cfo"):
+        errors.append(f"{name}: expected workdir {Path.home() / 'hermes-cfo'}, got {actual_workdir}")
     if not job.get("enabled", True):
         errors.append(f"{name}: job is disabled")
 

@@ -279,7 +279,7 @@ Hans can also **post into Mattermost** and have it routed back into the MCP mess
 | Auth | Apollo MCP uses a shared bearer token stored in `~/.hermes-exec.env` — never committed to git |
 | Secrets | xAI API key (if used) stored in DGX `~/.hermes-exec.env` only |
 | Mattermost | LAN + Tailscale only; no public port |
-| Git | No secrets in `hermes-v2` repo; all keys in env files |
+| Git | No secrets in `hermes-cfo` repo; all keys in env files |
 
 ---
 
@@ -304,7 +304,7 @@ Day 2 — Agent Integration
 
 Stretch
   11. Full exec stand-up test: Hermes posts → all execs read + reply
-  12. bootstrap-apollo.sh committed to hermes-v2
+  12. bootstrap-apollo.sh committed to hermes-cfo
 ```
 
 ---
@@ -312,7 +312,7 @@ Stretch
 ## 11. Files to Be Created
 
 ```
-hermes-v2/
+hermes-cfo/
 ├── docs/architecture/
 │   └── executive-comms-v1.md          ← this file
 ├── scripts/

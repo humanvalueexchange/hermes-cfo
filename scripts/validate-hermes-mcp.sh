@@ -57,7 +57,7 @@ mcp_resp=$(curl -sf -X POST "http://127.0.0.1:${PORT}/mcp" \
 check "MCP tools list returned" "$(echo "${mcp_resp}" | grep -q 'get_btc_forecast' && echo ok || echo "tools not found in response")"
 
 # tasks file
-TASKS_FILE="${HOME}/hermes-v2/logs/tasks/tasks.json"
+TASKS_FILE="${HOME}/hermes-cfo/logs/tasks/tasks.json"
 check "tasks file exists" "$([ -f "${TASKS_FILE}" ] && echo ok || echo "missing ${TASKS_FILE}")"
 
 echo ""

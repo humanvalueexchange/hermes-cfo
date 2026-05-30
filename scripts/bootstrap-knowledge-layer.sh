@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO_DIR="${HOME}/hermes-v2"
+REPO_DIR="${HOME}/hermes-cfo"
 ROOT="/hve-library"
 RUNTIME_DIR="${HOME}/.hve-knowledge"
 VENV_DIR="${RUNTIME_DIR}/venv"

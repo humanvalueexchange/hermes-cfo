@@ -141,7 +141,7 @@ For node, transaction, and system diagnostic tool responses: show the tool outpu
 
 If the MCP tool fails or is unavailable, run the script directly via terminal:
 ```bash
-bash ~/hermes-v2/scripts/hermes-diagnostic.sh
+bash ~/hermes-cfo/scripts/hermes-diagnostic.sh
 ```
 
 If BOTH fail, say exactly: "Diagnostic unavailable — MCP tool and hermes-diagnostic.sh both failed. Cannot provide system status." Then stop. Do NOT generate any diagnostic data.

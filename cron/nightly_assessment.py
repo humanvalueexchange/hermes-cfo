@@ -62,8 +62,8 @@ Generated: {iso_now()}
 {markdown_list(user_services)}
 
 ### Data and repos
-- hermes-v2 branch: {git_branch(REPO_DIR)}
-- hermes-v2 HEAD: {git_head(REPO_DIR)}
+- hermes-cfo branch: {git_branch(REPO_DIR)}
+- hermes-cfo HEAD: {git_head(REPO_DIR)}
 - BTC 1m market data: {file_status(BTC_DATA_PATH)}
 - Main profile path: {file_status(MAIN_PROFILE)}
 

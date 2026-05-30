@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO_DIR="${HOME}/hermes-v2"
+REPO_DIR="${HOME}/hermes-cfo"
 HERMES_PY="${HOME}/.hermes/hermes-agent/venv/bin/python"
 HERMES_ROOT="${HOME}/.hermes"
 ACTIVE_PROFILE="$(cat "${HERMES_ROOT}/active_profile" 2>/dev/null || echo default)"

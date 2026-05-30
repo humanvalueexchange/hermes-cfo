@@ -8,7 +8,7 @@ import sys
 import os
 from datetime import datetime, timezone
 
-LOG_DIR = os.path.expanduser("~/hermes-v2/logs/trades")
+LOG_DIR = os.path.expanduser("~/hermes-cfo/logs/trades")
 
 def write_entry(entry: dict):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")

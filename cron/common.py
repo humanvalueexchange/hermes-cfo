@@ -15,7 +15,7 @@ from typing import Iterable
 MATTERMOST_ENV_PATH = Path.home() / ".hve" / "mattermost.env"
 
 
-REPO_DIR = Path.home() / "hermes-v2"
+REPO_DIR = Path.home() / "hermes-cfo"
 BRIEFINGS_DIR = REPO_DIR / "logs" / "briefings"
 HERMES_ROOT = Path.home() / ".hermes"
 MAIN_PROFILE = HERMES_ROOT / "profiles" / "main"
