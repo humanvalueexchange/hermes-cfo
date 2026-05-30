@@ -10,8 +10,6 @@ HVE_MCP_API_KEY=your-mcp-api-key-here
 OLLAMA_HOST=http://localhost:11434
 
 # Optional: override model defaults
-# HERMES_DEFAULT_MODEL=mistral-small:24b
-# HERMES_CONDUCTOR_MODEL=mistral-small:24b
+# HERMES_CONDUCTOR_MODEL=qwen3.5:9b
 # HERMES_RESEARCH_MODEL=mistral-small:24b
-# HERMES_CRITIC_MODEL=gemma2:27b
 # HERMES_EXECUTION_MODEL=nemotron-3-nano:30b

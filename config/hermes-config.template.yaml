@@ -194,11 +194,11 @@ curator:
   stale_after_days: 30
 dashboard:
   theme: default
-# CONDUCTOR MODEL: qwen3.5:27b (262K context) — replaces gemma2:27b (8K, too small).
-# Fixed system overhead: SOUL.md ~2,500 + MCP tools ~800 + market hook ~300 = ~4,000 tokens.
-# gemma2:27b crashes after 2-3 turns. All 3 Platonic models now run ≥131K context.
+# CONDUCTOR MODEL: qwen3.5:9b (128K context) — replaces qwen3.5:27b (over-provisioned).
+# Swap 1 (2026-05-30): gemma2:27b → qwen3.5:27b (8K context too small for live CFO sessions)
+# Swap 2 (2026-05-30): qwen3.5:27b → qwen3.5:9b (27b over-provisioned; 9b same quality at 6.6GB vs 17GB)
 # gemma2:27b is available for Open WebUI debug sessions (short, controlled) only.
-default-model: qwen3.5:27b
+default-model: qwen3.5:9b
 delegation:
   api_key: ''
   base_url: ''
@@ -306,8 +306,8 @@ memory:
   user_char_limit: 1375
   user_profile_enabled: true
 model:
-  context_length: 262144
-  default: qwen3.5:27b
+  context_length: 131072
+  default: qwen3.5:9b
   provider: ollama
 model_catalog:
   enabled: true

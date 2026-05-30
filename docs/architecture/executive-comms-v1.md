@@ -48,7 +48,7 @@ This spec defines **Apollo** — the Executive Communications Hub — and the pr
 **Platform:** Raspberry Pi 5 — 16 GB RAM + Hailo-8 accelerator  
 **Static LAN IP:** `10.0.0.80`  
 **Tailscale IP:** `100.85.145.XX` *(assigned at provisioning)*  
-**Tailscale network:** Shared with DGX Spark (`100.85.145.63`)
+**Tailscale network:** Shared with DGX Spark (`[DGX_TAILSCALE_IP]`)
 
 Apollo is the only dedicated communications infrastructure node. It runs:
 - The **Executive MCP Server** (message bus)

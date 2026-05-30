@@ -2,11 +2,11 @@
 # test-vulcan-connectivity.sh — Validate Vulcan (WSL) can reach all Hermes services on DGX Spark
 # Run this from Vulcan's WSL terminal before starting any dev loop work.
 # Usage: bash test-vulcan-connectivity.sh [DGX_IP]
-# Default DGX_IP: 192.168.1.10
+# Default DGX_IP: [DGX_LAN_IP]
 
 set -euo pipefail
 
-DGX="${1:-100.85.145.63}"  # DGX Spark Tailscale IP (LAN fallback: 192.168.1.10)
+DGX="${1:-[DGX_TAILSCALE_IP]}"  # DGX Spark Tailscale IP (LAN fallback: [DGX_LAN_IP])
 PASS=0
 FAIL=0
 

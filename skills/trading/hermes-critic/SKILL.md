@@ -1,61 +1,47 @@
 ---
 name: hermes-critic
-description: "Invoke the Hermes Critic/Veto sub-agent (gemma2:27b) for trade proposal review, risk assessment, and mandatory Go/No-Go decisions. Output is always CRITIC:APPROVE or CRITIC:VETO."
+description: "Conductor-as-Critic: the Conductor (qwen3.5:9b) performs inline risk veto using CONDUCTOR:APPROVE / CONDUCTOR:VETO. gemma2:27b retired from Telegram stack (8K context too small). Updated 2026-05-30."
 category: trading
-version: 1.0
-date: 2026-05-10
+version: 2.0
+date: 2026-05-30
+deprecated_model: gemma2:27b
+active_model: qwen3.5:9b (Conductor)
 ---
 
-# hermes-critic — Critic, Risk & Veto Sub-Agent
+# hermes-critic — Critic, Risk & Veto (Conductor-Inline)
 
-## Overview
-Delegates a trade proposal to `gemma2:27b` for independent risk review (8K context, temp 0.10). This is the **mandatory circuit breaker** before any trade is executed. The Critic holds absolute veto power. Its decision cannot be overridden.
+## Architecture Change (2026-05-30)
 
-## When to Invoke
-- **Every trade proposal** — no exceptions, paper or live
-- Drawdown check (daily > 2%, weekly > 5%)
-- Strategy risk review
-- Unusual market conditions check
-- Any decision involving capital at risk
+`gemma2:27b` was the dedicated Critic model in the original 4-agent stack. It has been **retired from the Telegram/live stack** because its 8K context window is insufficient for real CFO sessions — the fixed system prompt overhead alone (SOUL.md ~2,500 tokens + MCP tool defs ~800 + market hook ~300) consumed ~4,000 of the available 8K, leaving under 4K for conversation.
 
-## Invocation
+The veto function is now performed **inline by the Conductor** (`qwen3.5:9b`, 128K context). The Conductor synthesizes the research output and makes the Go/No-Go decision before routing to the Executor.
 
-Provide the complete trade proposal. Keep input under 6K characters (Gemma 2 has a hard 8K context limit — reserve space for its response). Include: symbol, direction, entry, stop, target, size, calculated risk, fees, net edge, and market context.
+> `gemma2:27b` remains installed on the DGX and is available for Open WebUI debug sessions (short, controlled, < 8K total) only.
 
-```bash
-curl -s http://localhost:11434/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gemma2:27b",
-    "stream": false,
-    "options": {"temperature": 0.1, "num_ctx": 8192},
-    "messages": [
-      {
-        "role": "system",
-        "content": "You are the Hermes Critic and Risk Veto Agent for Human Value Exchange Corporation. You hold absolute veto power on all trades. Your job is to reject bad trades, not to find reasons to approve. Rules you enforce without exception: (1) Max risk per trade = 1% of portfolio. (2) Daily drawdown limit = 2%. (3) Weekly drawdown limit = 5%. (4) Kraken taker fee 0.26% must be factored into net edge — if net edge after fees is negative, VETO. (5) Paper trading only until live authorization from Hans. Your output MUST end with exactly one of: CRITIC:APPROVE or CRITIC:VETO followed by a single sentence reason."
-      },
-      {
-        "role": "user",
-        "content": "TRADE PROPOSAL HERE"
-      }
-    ]
-  }' | python3 -c "import sys,json; r=json.load(sys.stdin); print(r['message']['content'])"
+## Current Decision Flow (3-Agent Platonic)
+
+```
+1. Clarifier  →  mistral-small:24b  →  market analysis + strategy
+2. Conductor  →  qwen3.5:9b (you)   →  synthesize + CONDUCTOR:APPROVE or CONDUCTOR:VETO
+3. Executor   →  nemotron-3-nano:30b →  position math + audit trail (only on APPROVE)
 ```
 
-## Output Format Expected
-```
-RISK ASSESSMENT:
-- Risk %: [calculated]
-- Net edge after fees: [calculated]
-- Drawdown headroom: [daily X% / weekly Y% remaining]
-- [any other risk flags]
+## Veto Rules (enforced by Conductor)
 
-CRITIC:APPROVE — [one sentence reason]
+- Max risk per trade: **1% of portfolio**
+- Daily drawdown limit: **2%**. Weekly: **5%**. Breach → halt all trading, alert Hans.
+- Kraken taker fee **0.26%** must be factored into net edge — negative net edge = VETO
+- **Paper trading only** until Hans explicitly authorizes live trading in writing
+- Bitcoin/BTC only. No altcoins.
+
+## Approval Token
+
+```
+CONDUCTOR:APPROVE — [one sentence reason]
 ```
 or
 ```
-CRITIC:VETO — [one sentence reason: which rule was violated]
+CONDUCTOR:VETO — [one sentence reason: which rule was violated]
 ```
 
-## ⚠️ Hard Rule
-If the Critic's response does not contain `CRITIC:APPROVE`, treat it as a `CRITIC:VETO`. Do not attempt to reinterpret or override a veto.
+**Hard rule:** If the Conductor's response does not contain `CONDUCTOR:APPROVE`, treat it as `CONDUCTOR:VETO`. No override.

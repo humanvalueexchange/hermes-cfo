@@ -28,7 +28,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 # ── paths ────────────────────────────────────────────────────────────────────
-REPO_DIR = Path.home() / "hermes-v2"
+REPO_DIR = Path.home() / "hermes-cfo"
 BRIEFINGS_DIR = REPO_DIR / "logs" / "briefings"
 TASKS_FILE = REPO_DIR / "logs" / "tasks" / "tasks.json"
 VAULT_DIR = Path("/hve-library/vault/hve-knowledge-vault")
@@ -245,7 +245,7 @@ def create_task(
     """
     Create a follow-up task in the HVE task queue.
 
-    Tasks are stored in hermes-v2/logs/tasks/tasks.json and surfaced
+    Tasks are stored in hermes-cfo/logs/tasks/tasks.json and surfaced
     in the morning briefing and client context.
 
     Args:

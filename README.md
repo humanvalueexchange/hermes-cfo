@@ -19,15 +19,17 @@ Hermes monitors balances, enforces treasury policy, reports to the CEO via Teleg
 
 | Role | Model | Context | RAM | Purpose |
 |---|---|---|---|---|
-| **Conductor / CFO Brain** | `qwen3.5:27b` | 262K | 42 GB | Orchestrates decisions, synthesizes all outputs |
-| **Clarifier / Research** | `mistral-small:24b` | 131K | 44 GB | Market analysis, strategy research, synthesis |
-| **Executor** | `nemotron-3-nano:30b` | 131K | 26 GB | Position sizing, fee calculations, tool calls |
+| **Conductor / CFO Brain** | `qwen3.5:9b` | 128K | 6.6 GB | Orchestrates decisions, synthesizes all outputs |
+| **Clarifier / Research** | `mistral-small:24b` | 131K | 14 GB | Market analysis, strategy research, synthesis |
+| **Executor** | `nemotron-3-nano:30b` | 131K | 24 GB | Position sizing, fee calculations, tool calls |
 
-**Total GPU load: ~112 GB of 128 GB unified memory**
+**Total GPU load: ~45 GB of 128 GB unified memory (~83 GB headroom)**
 
 All models run via **Ollama** (native binary, systemd-managed). All pinned with `OLLAMA_KEEP_ALIVE=-1` — never unloaded.
 
-> **Architecture decision (2026-05-30):** `gemma2:27b` deprecated as Conductor. Its 8K context window caused session crashes under real-world load (SOUL.md + MCP tool defs alone consume ~4,000 tokens). Replaced with `qwen3.5:27b` (262K context, same 27B class, zero download — already installed).
+> **Architecture decision (2026-05-30, swap 1):** `gemma2:27b` deprecated as Conductor. Its 8K context window caused session crashes under real-world load (SOUL.md + MCP tool defs alone consume ~4,000 tokens). Replaced with `qwen3.5:27b` (262K context).
+>
+> **Architecture decision (2026-05-30, swap 2):** `qwen3.5:27b` swapped to `qwen3.5:9b` as Conductor. 27b was over-provisioned — 9b delivers identical quality at 6.6 GB vs 17 GB loaded, freeing ~10 GB headroom and improving first-token latency (Issue #26).
 
 ---
 
@@ -37,7 +39,7 @@ All models run via **Ollama** (native binary, systemd-managed). All pinned with 
 CEO (Hans) ──Telegram──▶ Hermes Gateway
                               │
                     ┌─────────┴──────────┐
-                    │   Conductor        │  qwen3.5:27b (262K ctx)
+                    │   Conductor        │  qwen3.5:9b (128K ctx)
                     │   (CFO Brain)      │
                     └─────────┬──────────┘
                               │
@@ -71,9 +73,9 @@ CEO (Hans) ──Telegram──▶ Hermes Gateway
 | **Gateway** | `~/.hermes/` — systemd user service |
 | **Config** | `~/.hermes/profiles/main/config.yaml` (never committed — contains secrets) |
 | **MCP** | `~/.hermes-mcp.env` (API keys, never committed) |
-| **Open WebUI** | `0.9.5` — debug console at `192.168.1.10:8080` |
+| **Open WebUI** | `0.9.5` — debug console at `[DGX_LAN_IP]:8080` |
 | **Comms** | Telegram (inbound/outbound), Mattermost (reports) |
-| **LAN IP** | `192.168.1.10` (static Ethernet, permanent) |
+| **LAN IP** | `[DGX_LAN_IP]` (static Ethernet, permanent) |
 
 ---
 
@@ -84,13 +86,14 @@ hermes-cfo/
 ├── README.md                         ← you are here
 ├── VERSION.md                        ← single source of truth for all component versions
 ├── docs/
-│   └── SOUL.md                       ← Hermes identity, rules, HVE vision, model roles
+│   └── SOUL.md                       ← REMOVED — see dotfiles/SOUL.md
+├── dotfiles/
+│   ├── SOUL.md                       ← Hermes identity, rules, HVE vision, model roles (deploy → ~/.hermes/profiles/main/)
+│   ├── hermes-*.service              ← systemd unit files
+│   └── inject-market-data.sh        ← pre-LLM hook: live BTC price injection
 ├── config/
 │   ├── hermes-config.template.yaml   ← config template (secrets as ${PLACEHOLDERS})
 │   └── hermes-env.template           ← .env template — what secrets are needed
-├── src/
-│   └── hooks/
-│       └── inject-market-data.sh     ← pre-LLM hook: live BTC price injection
 └── scripts/
     ├── hermes-install.sh             ← bootstrap on fresh DGX Spark
     ├── hermes-deploy.sh              ← deploy config changes to live runtime
