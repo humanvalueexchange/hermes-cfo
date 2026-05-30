@@ -64,6 +64,14 @@ cp "$REPO_ROOT/dotfiles/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data
 chmod +x "$HERMES_HOOKS/inject-market-data.sh"
 echo "✅ Market data hook installed"
 
+# ── 6b. Install model preload service ────────────────────────────────────────
+mkdir -p "$HOME/.config/systemd/user"
+cp "$REPO_ROOT/dotfiles/hermes-model-preload.service" "$HOME/.config/systemd/user/hermes-model-preload.service"
+systemctl --user daemon-reload
+systemctl --user enable hermes-model-preload.service
+systemctl --user start hermes-model-preload.service
+echo "✅ Model preload service installed and started"
+
 # ── 7. Restart Hermes gateway ─────────────────────────────────────────────────
 if systemctl --user is-active --quiet hermes-gateway.service 2>/dev/null; then
   echo ""

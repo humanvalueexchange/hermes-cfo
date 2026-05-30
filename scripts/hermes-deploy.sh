@@ -80,6 +80,18 @@ else
   echo "✅ inject-market-data.sh — no changes"
 fi
 
+# ── 6b. Model preload service diff ───────────────────────────────────────────
+PRELOAD_DST="$HOME/.config/systemd/user/hermes-model-preload.service"
+if ! diff -q "$REPO_ROOT/dotfiles/hermes-model-preload.service" "$PRELOAD_DST" &>/dev/null 2>&1; then
+  echo "→ hermes-model-preload.service changed — updating..."
+  cp "$REPO_ROOT/dotfiles/hermes-model-preload.service" "$PRELOAD_DST"
+  systemctl --user daemon-reload
+  systemctl --user restart hermes-model-preload.service
+  echo "✅ hermes-model-preload.service updated"
+else
+  echo "✅ hermes-model-preload.service — no changes"
+fi
+
 # ── 7. Restart if needed ──────────────────────────────────────────────────────
 if $RESTART_NEEDED; then
   echo ""

@@ -1,0 +1,15 @@
+[Unit]
+Description=Hermes Platonic Model Preload — keeps qwen3.5:9b + mistral-small:24b + nemotron-3-nano:30b hot in Ollama
+Documentation=https://github.com/humanvalueexchange/hermes-cfo
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash %h/hermes-cfo/scripts/hermes-preload-models.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target
