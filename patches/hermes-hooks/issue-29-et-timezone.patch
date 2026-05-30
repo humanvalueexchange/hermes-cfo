@@ -1,0 +1,31 @@
+--- /tmp/vulcan/issue29-inject-market-data.sh.orig	2026-05-30 15:29:22.432066856 -0400
++++ /tmp/vulcan/issue29-inject-market-data.sh	2026-05-30 15:29:12.281870386 -0400
+@@ -7,8 +7,8 @@
+ CACHE_TTL=60
+ FETCH_MAX_TIME=3
+ 
+-now_utc() {
+-    date -u "+%Y-%m-%d %H:%M:%S UTC"
++now_et() {
++    TZ="America/New_York" date "+%Y-%m-%d %I:%M:%S %p ET"
+ }
+ 
+ emit_context() {
+@@ -18,7 +18,7 @@
+     local freshness="$4"
+     local note="$5"
+     local now
+-    now="$(now_utc)"
++    now="$(now_et)"
+ 
+     python3 - "$price" "$timestamp" "$source" "$freshness" "$note" "$now" <<'PYEOF'
+ import json
+@@ -46,7 +46,7 @@
+ emit_unavailable() {
+     local reason="$1"
+     local now
+-    now="$(now_utc)"
++    now="$(now_et)"
+     python3 - "$reason" "$now" <<'PYEOF'
+ import json
+ import sys
