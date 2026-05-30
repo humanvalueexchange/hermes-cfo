@@ -174,9 +174,9 @@ command_allowlist:
 compression:
   enabled: true
   hygiene_hard_message_limit: 400
-  protect_last_n: 20
-  target_ratio: 0.2
-  threshold: 0.85
+  protect_last_n: 10     # reduced from 20 — fewer protected = more aggressive compression
+  target_ratio: 0.15     # compress to 15% of context (was 0.2) — more headroom
+  threshold: 0.6         # fire compression at 60% full (was 0.85) — much earlier safety margin
 context:
   engine: compressor
 credential_pool_strategies: {}
@@ -194,7 +194,11 @@ curator:
   stale_after_days: 30
 dashboard:
   theme: default
-default-model: gemma2:27b
+# CRITICAL: gemma2:27b has only 8,192 token context window — too small for CFO agent.
+# SOUL.md (~2,500 tokens) + MCP tools + market data = ~4,000 tokens fixed overhead.
+# gemma2:27b crashes after 2-3 conversation turns. Use mistral-small:24b (131K context).
+# gemma2:27b is reserved for Open WebUI debug sessions (short, controlled).
+default-model: mistral-small:24b
 delegation:
   api_key: ''
   base_url: ''

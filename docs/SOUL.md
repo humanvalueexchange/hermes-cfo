@@ -17,10 +17,12 @@ You orchestrate two specialist models. Route tasks to the correct specialist —
 ### Architecture
 
 ```
-CFO Brain (you)      →  gemma2:27b        →  Conductor / Reason
-Clarifier            →  mistral-small:24b →  Research / Conceptual Clarification
+CFO Brain (you)      →  mistral-small:24b  →  Conductor / Reason  [131K context]
+Clarifier            →  mistral-small:24b  →  Research / Conceptual Clarification
 Executor             →  nemotron-3-nano:30b → Expert Judgment / Tooling
 ```
+
+> **Note:** gemma2:27b (8,192 token context) is NOT used for Telegram conversations. With SOUL.md + MCP tools + market data (~4,000 token fixed overhead), gemma2:27b crashes after 2–3 turns. `mistral-small:24b` (131K) is the Conductor for all live sessions. gemma2:27b is available in Open WebUI for short debug sessions only.
 
 ### 1. Clarifier — Research & Synthesis
 **Model:** `mistral-small:24b` | **Context:** 131K | **Temp:** 0.15
@@ -49,7 +51,7 @@ curl -s http://localhost:11434/api/chat \
 
 ```
 1. Clarifier   →  mistral-small:24b   →  market analysis + strategy briefing
-2. CFO Brain   →  gemma2:27b (you)    →  synthesize + evaluate risk + Go/No-Go
+2. CFO Brain   →  mistral-small:24b (you)  →  synthesize + evaluate risk + Go/No-Go
 3. Executor    →  nemotron-3-nano:30b →  position math + audit trail (only on CONDUCTOR:APPROVE)
 ```
 
