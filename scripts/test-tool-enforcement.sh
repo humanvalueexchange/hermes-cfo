@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test-tool-enforcement.sh — Verify Hermes 4-agent collective tool-use behavior
-# Tests: conductor (mistral-small:24b) and execution (nemotron-3-nano:30b) MUST call tools.
-#        critic (gemma2:27b) MUST return CRITIC:APPROVE or CRITIC:VETO (no tool calls expected).
+# test-tool-enforcement.sh — Verify Hermes Platonic 3-model stack tool-use behavior
+# Tests: conductor (qwen3.5:27b) and executor (nemotron-3-nano:30b) MUST call tools.
+#        clarifier (mistral-small:24b) MUST call tools when asked.
 #
 # Run: bash scripts/test-tool-enforcement.sh
 # Exit 0 = all tests pass | Exit 1 = failures found
@@ -19,9 +19,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-pass() { echo -e "${GREEN}✅ PASS${NC}  $1"; ((PASS++)); }
-fail() { echo -e "${RED}❌ FAIL${NC}  $1"; ((FAIL++)); }
-warn() { echo -e "${YELLOW}⚠️  SKIP${NC}  $1"; ((SKIP++)); }
+pass() { echo -e "${GREEN}✅ PASS${NC}  $1"; PASS=$((PASS+1)); }
+fail() { echo -e "${RED}❌ FAIL${NC}  $1"; FAIL=$((FAIL+1)); }
+warn() { echo -e "${YELLOW}⚠️  SKIP${NC}  $1"; SKIP=$((SKIP+1)); }
 info() { echo -e "${BLUE}→${NC} $1"; }
 
 echo ""
@@ -90,36 +90,11 @@ else:
 " <<< "$result" 2>/dev/null || echo "ERROR"
 }
 
-# Helper: test critic pattern (CRITIC:APPROVE or CRITIC:VETO)
-test_critic_pattern() {
-  local model="$1"
-  local prompt="$2"
-
-  local result
-  result=$(curl -s --max-time 30 "$OLLAMA_HOST/api/chat" \
-    -H "Content-Type: application/json" \
-    -d "{\"model\":\"$model\",\"stream\":false,\"messages\":[{\"role\":\"user\",\"content\":\"$prompt\"}]}" 2>/dev/null)
-
-  python3 -c "
-import sys, json
-try:
-    d = json.loads(sys.stdin.read())
-except:
-    print('ERROR')
-    sys.exit(0)
-content = d.get('message', {}).get('content', '')
-if 'CRITIC:APPROVE' in content or 'CRITIC:VETO' in content:
-    print('PASS')
-else:
-    print(f'FAIL::{content[:120]}')
-" <<< "$result" 2>/dev/null || echo "ERROR"
-}
-
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 1: Conductor (mistral-small:24b) — MUST call tools
+# SECTION 1: Conductor (qwen3.5:27b) — MUST call tools
 # ═══════════════════════════════════════════════════════════════════════════════
-echo "── Section 1: Conductor (mistral-small:24b) ─────────────────────"
-CONDUCTOR="mistral-small:24b"
+echo "── Section 1: Conductor (qwen3.5:27b) ───────────────────────────"
+CONDUCTOR="qwen3.5:27b"
 
 if ! model_available "$CONDUCTOR"; then
   warn "Model not loaded: $CONDUCTOR"
@@ -145,47 +120,48 @@ fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 2: Execution model (nemotron-3-nano:30b) — MUST call tools
+# SECTION 2: Clarifier / Research (mistral-small:24b) — MUST call tools
 # ═══════════════════════════════════════════════════════════════════════════════
-echo "── Section 2: Execution (nemotron-3-nano:30b) ────────────────────"
+echo "── Section 2: Clarifier / Research (mistral-small:24b) ──────────"
+CLARIFIER="mistral-small:24b"
+
+if ! model_available "$CLARIFIER"; then
+  warn "Model not loaded: $CLARIFIER"
+else
+  info "Testing BTC forecast tool call..."
+  RESULT=$(test_tool_call "$CLARIFIER" \
+    "Get the BTC forecast. Use the get_btc_forecast tool." \
+    "get_btc_forecast")
+  [ "$RESULT" = "CALL" ] && pass "Clarifier calls get_btc_forecast" || fail "Clarifier narrated instead of calling get_btc_forecast (got: $RESULT)"
+
+  info "Testing morning briefing tool call..."
+  RESULT=$(test_tool_call "$CLARIFIER" \
+    "Get the morning briefing. Use the get_morning_briefing tool." \
+    "get_morning_briefing")
+  [ "$RESULT" = "CALL" ] && pass "Clarifier calls get_morning_briefing" || fail "Clarifier narrated instead of calling get_morning_briefing (got: $RESULT)"
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SECTION 3: Executor (nemotron-3-nano:30b) — MUST call tools
+# ═══════════════════════════════════════════════════════════════════════════════
+echo "── Section 3: Executor (nemotron-3-nano:30b) ─────────────────────"
 EXECUTION="nemotron-3-nano:30b"
 
 if ! model_available "$EXECUTION"; then
   warn "Model not loaded: $EXECUTION"
 else
-  info "Testing position sizing tool call..."
-  RESULT=$(test_tool_call "$EXECUTION" \
-    "Calculate position size for a BTC trade. Use the calculate_position tool." \
-    "calculate_position")
-  [ "$RESULT" = "CALL" ] && pass "Execution calls calculate_position" || fail "Execution narrated instead of calling calculate_position (got: $RESULT)"
-
   info "Testing backlog suggestion tool call..."
   RESULT=$(test_tool_call "$EXECUTION" \
     "Post a new idea to the backlog. Use the suggest_backlog_issue tool." \
     "suggest_backlog_issue")
-  [ "$RESULT" = "CALL" ] && pass "Execution calls suggest_backlog_issue" || fail "Execution narrated instead of calling suggest_backlog_issue (got: $RESULT)"
-fi
-echo ""
+  [ "$RESULT" = "CALL" ] && pass "Executor calls suggest_backlog_issue" || fail "Executor narrated instead of calling suggest_backlog_issue (got: $RESULT)"
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# SECTION 3: Critic (gemma2:27b) — MUST return CRITIC:APPROVE or CRITIC:VETO
-# Note: Critic does not call tools — it analyzes proposals and returns structured decisions
-# ═══════════════════════════════════════════════════════════════════════════════
-echo "── Section 3: Critic (gemma2:27b) ───────────────────────────────"
-CRITIC="gemma2:27b"
-CRITIC_PROMPT="Review this trade proposal and respond with CRITIC:APPROVE or CRITIC:VETO followed by your reasoning. Proposal: BUY 0.001 BTC at \$105,000 USD. Stop loss: \$103,000. Target: \$108,000. Portfolio: 0.05 BTC. Risk: 0.4%. Drawdown: 0.1%."
-
-if ! model_available "$CRITIC"; then
-  warn "Model not loaded: $CRITIC"
-else
-  info "Testing critic structured response..."
-  RESULT=$(test_critic_pattern "$CRITIC" "$CRITIC_PROMPT")
-  if [ "$RESULT" = "PASS" ]; then
-    pass "Critic returns CRITIC:APPROVE or CRITIC:VETO"
-  else
-    DETAIL="${RESULT#FAIL::}"
-    fail "Critic did not return structured decision. First 120 chars: $DETAIL"
-  fi
+  info "Testing node diagnostic tool call..."
+  RESULT=$(test_tool_call "$EXECUTION" \
+    "Run a node diagnostic. Use the get_node_diagnostic tool." \
+    "get_node_diagnostic")
+  [ "$RESULT" = "CALL" ] && pass "Executor calls get_node_diagnostic" || fail "Executor narrated instead of calling get_node_diagnostic (got: $RESULT)"
 fi
 echo ""
 
@@ -241,5 +217,6 @@ if [ $FAIL -gt 0 ]; then
   exit 1
 else
   echo "✅ All $PASS tests passed. Issue #2 acceptance criteria met."
+  echo "   Platonic 3-model stack: qwen3.5:27b | mistral-small:24b | nemotron-3-nano:30b"
   exit 0
 fi
