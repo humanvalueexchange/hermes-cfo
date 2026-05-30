@@ -3,17 +3,17 @@
 # Updated by Claude (CTO) on each component change.
 # Grok Build and Vulcan: always test against the versions listed here.
 
-## Live Stack (DGX Spark — 192.168.1.10)
+## Live Stack (DGX Spark — [DGX_LAN_IP])
 
 | Component | Version | Updated | Notes |
 |---|---|---|---|
 | **hermes-agent** | `0.15.2` | 2026-05-30 | v2026.5.29.2 tag — confirmed on 0.15.2 |
-| **qwen3.5:27b** | Ollama latest | 2026-05-30 | Conductor / CFO Brain — 262K context |
+| **qwen3.5:9b** | Ollama latest | 2026-05-30 | Conductor / CFO Brain — 128K context |
 | **mistral-small:24b** | Ollama latest | 2026-05-29 | Clarifier / Research — 131K context |
 | **nemotron-3-nano:30b** | Ollama latest | 2026-05-29 | Executor — 131K context |
-| **gemma2:27b** | Ollama latest | — | Open WebUI debug only — 8K context, NOT for Telegram |
+| **gemma2:27b** | Ollama latest | — | Open WebUI debug only — NOT for Telegram |
 | **Open WebUI** | running | 2026-05-29 | Debug console only |
-| **HVE MCP Server** | `1.27.1` | — | hve-node at :8765 |
+| **HVE MCP Server** | `1.0.0` | 2026-05-30 | hve-node at :8765 |
 
 ## Update Ownership
 
@@ -37,5 +37,6 @@
 
 | Date | From | To | Upgraded By | Notes |
 |---|---|---|---|---|
-| 2026-05-30 | gemma2:27b → qwen3.5:27b | Conductor swap | Claude (CTO) | gemma2 8K ctx too small; qwen3.5:27b 262K ctx ✅ |
+| 2026-05-30 | qwen3.5:27b | qwen3.5:9b | Claude (CTO) | Performance: 27b was over-provisioned for conductor role; 9b 6.6 GB vs 17 GB, same quality, frees 10 GB headroom |
+| 2026-05-30 | gemma2:27b | qwen3.5:27b | Claude (CTO) | gemma2 8K ctx too small; qwen3.5:27b 262K ctx ✅ |
 | 2026-05-29 | 0.13.0 | 0.15.2 | Claude (CTO) | Manual — discovered 22-day gap, daily cron now in place |
