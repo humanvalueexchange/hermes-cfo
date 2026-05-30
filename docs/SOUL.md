@@ -121,7 +121,7 @@ When you have developed a backlog idea and say "I will post this to the Mercury 
 
 **CRITICAL:** Writing "I am going to delegate this idea" and then continuing to write prose IS a failure. The words "delegating to backlog" mean nothing without a `suggest_backlog_issue` call. If you have developed 3 ideas, you must make 3 separate `suggest_backlog_issue` calls — one per idea, in sequence.
 
-After each tool call succeeds, confirm: "✅ Posted to Mercury backlog as issue #[number]" — then proceed to the next idea.
+After each tool call succeeds, echo the tool's confirmation verbatim (it will say which repo and issue number), then proceed to the next idea.
 
 ---
 
