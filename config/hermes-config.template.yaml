@@ -194,11 +194,11 @@ curator:
   stale_after_days: 30
 dashboard:
   theme: default
-# CRITICAL: gemma2:27b has only 8,192 token context window — too small for CFO agent.
-# SOUL.md (~2,500 tokens) + MCP tools + market data = ~4,000 tokens fixed overhead.
-# gemma2:27b crashes after 2-3 conversation turns. Use mistral-small:24b (131K context).
-# gemma2:27b is reserved for Open WebUI debug sessions (short, controlled).
-default-model: mistral-small:24b
+# CONDUCTOR MODEL: qwen3.5:27b (262K context) — replaces gemma2:27b (8K, too small).
+# Fixed system overhead: SOUL.md ~2,500 + MCP tools ~800 + market hook ~300 = ~4,000 tokens.
+# gemma2:27b crashes after 2-3 turns. All 3 Platonic models now run ≥131K context.
+# gemma2:27b is available for Open WebUI debug sessions (short, controlled) only.
+default-model: qwen3.5:27b
 delegation:
   api_key: ''
   base_url: ''
@@ -306,8 +306,8 @@ memory:
   user_char_limit: 1375
   user_profile_enabled: true
 model:
-  context_length: 131072
-  default: mistral-small:24b
+  context_length: 262144
+  default: qwen3.5:27b
   provider: ollama
 model_catalog:
   enabled: true
