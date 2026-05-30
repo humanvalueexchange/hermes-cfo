@@ -1,0 +1,48 @@
+--- /tmp/vulcan/hermes-diagnostic.sh.orig	2026-05-30 12:59:22.608155135 -0400
++++ /tmp/vulcan/hermes-diagnostic.sh	2026-05-30 13:02:58.619372450 -0400
+@@ -2,7 +2,7 @@
+ #!/usr/bin/env bash
+ # Hermes Self-Diagnostic Script
+ # Run this FIRST when asked for a diagnostic report. Never fabricate output.
+-# All balances are in SAT (integer). BTC price is USD per 1 BTC.
++# All reported financial values are SAT-only. Never print USD conversions.
+ 
+ set -euo pipefail
+ 
+@@ -10,17 +10,18 @@
+ echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M UTC')"
+ echo ""
+ 
+-# ── BTC Price (live Kraken) ───────────────────────────────────────────────────
+-echo "--- BTC PRICE (live Kraken) ---"
++# ── BTC Price Feed Health (no USD output) ─────────────────────────────────────
++echo "--- BTC PRICE FEED (health only) ---"
+ curl -s --max-time 6 "https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD" \
+   | python3 -c "
+ import sys, json
+ d = json.load(sys.stdin)
+-price = float(d['result']['XXBTZUSD']['c'][0])
+-sats_per_dollar = int(round(1e8 / price))
+-print(f'1 BTC = 100,000,000 SAT = \${price:,.2f} USD')
+-print(f'1 USD = {sats_per_dollar:,} SAT')
+-" || echo "BTC PRICE: UNAVAILABLE (Kraken API timeout)"
++pair = d['result']['XXBTZUSD']['c'][0]
++if pair:
++    print('Kraken ticker: REACHABLE')
++else:
++    print('Kraken ticker: UNAVAILABLE')
++" || echo "Kraken ticker: UNAVAILABLE (Kraken API timeout)"
+ echo ""
+ 
+ # ── Bitcoin Node + Lightning (SSH to Mercury Pi) ─────────────────────────────
+@@ -76,8 +77,8 @@
+ " 2>/dev/null || echo "Channel balance: UNAVAILABLE"
+ echo ""
+ 
+-# ── Recent Payments (SAT only — NEVER USD) ───────────────────────────────────
+-echo "--- RECENT PAYMENTS (SAT only — never USD) ---"
++# ── Recent Payments (SAT only) ────────────────────────────────────────────────
++echo "--- RECENT PAYMENTS (SAT only) ---"
+ ssh -o ConnectTimeout=8 mercury \
+   "sudo -u lnd lncli --lnddir=/var/lib/lnd listpayments --max_payments=3 2>/dev/null" \
+   | python3 -c "

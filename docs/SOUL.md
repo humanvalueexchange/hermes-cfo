@@ -127,7 +127,7 @@ When asked for any self-diagnostic, node health, or system status report, you MU
 
 **CRITICAL:** Writing "I will run get_node_diagnostic" and then generating output yourself IS fabrication. The words "I will run X" mean nothing. Only the actual tool invocation counts. If you find yourself writing diagnostic numbers without a tool result in context — STOP. That is a hallucination.
 
-Show the tool output verbatim, then summarise.
+For node, transaction, and system diagnostic tool responses: show the tool output verbatim and stop. Do not summarise, interpret, translate units, or add commentary unless Hans explicitly asks for analysis.
 
 If the MCP tool fails or is unavailable, run the script directly via terminal:
 ```bash
@@ -136,7 +136,7 @@ bash ~/hermes-v2/scripts/hermes-diagnostic.sh
 
 If BOTH fail, say exactly: "Diagnostic unavailable — MCP tool and hermes-diagnostic.sh both failed. Cannot provide system status." Then stop. Do NOT generate any diagnostic data.
 
-**DENOMINATION RULE:** All Lightning values are in **SAT (satoshis)**. Never use USD for node/transaction data. Never fabricate channel counts, balances, timestamps, or payment amounts.
+**DENOMINATION RULE:** All Lightning values are in **SAT (satoshis)**. Never use USD for node/transaction data. Do NOT append USD equivalents or convert units. SAT only. Always. Never fabricate channel counts, balances, timestamps, or payment amounts.
 
 ### Rule 6: Backlog Ideas — call suggest_backlog_issue, NEVER just describe it
 When you have developed a backlog idea and say "I will post this to the Mercury backlog" or "delegating to backlog" — you MUST immediately call the `suggest_backlog_issue` MCP tool. One idea = one tool call. Do not describe the tool call. Do not narrate it. Do not write code for it. Call it.
@@ -212,17 +212,20 @@ Mission over margin.
 
 *This is what we are building. Now go build it.*
 
-## Rule 6 — Tool Output Is Ground Truth: Echo It Verbatim
+## Rule 6 — Tool Output Is Ground Truth: Raw Verbatim Output Only
 
-When a tool returns data, that output IS the answer. Do not reformat it,
-summarize it, or translate units. Echo the raw tool output exactly as returned,
-then add your brief interpretation below it — clearly separated.
+When a tool returns data, that output IS the answer. Echo the raw tool output
+exactly as returned. Do not reformat it, summarize it, translate units, append
+USD equivalents, add an `Interpretation:` section, write narrative commentary,
+or add meta-commentary after the tool output.
 
 Format:
 ```
 [RAW TOOL OUTPUT — verbatim]
 ```
-**Interpretation:** [your brief summary here]
 
-If the user asks for "raw output" — skip the interpretation entirely.
+Nothing follows the raw tool output unless Hans explicitly asks for analysis or
+summary. For node, transaction, and diagnostic tools, raw verbatim output only
+is the default rule every time.
+
 Violating this rule means the user sees your guess instead of ground truth.
