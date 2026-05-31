@@ -66,6 +66,9 @@ CEO (Hans) ──Telegram──▶ Hermes Gateway
             │ create_task                  │
             │ suggest_backlog_issue        │
             │ vote_backlog_issue           │
+            │ read_github_issue            │
+            │ comment_github_issue         │
+            │ list_github_issues           │
             └──────────────────────────────┘
 
                   Native Skills
