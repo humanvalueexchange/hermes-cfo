@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HERMES_PROFILE=~/.hermes/profiles/main
 HERMES_HOOKS=~/.hermes/agent-hooks
 ENV_FILE=~/.hermes-mcp.env
+SKILLS_DIR="$REPO_ROOT/skills/hve"
 
 echo "╔══════════════════════════════════════════════════╗"
 echo "║       Hermes CFO — Deploy                        ║"
@@ -16,6 +17,7 @@ echo ""
 # ── 1. Pull latest from repo ──────────────────────────────────────────────────
 echo "→ Pulling latest from hermes-cfo repo..."
 cd "$REPO_ROOT"
+OLD_HEAD=$(git rev-parse HEAD)
 git pull --rebase origin main
 echo ""
 
@@ -90,6 +92,23 @@ if ! diff -q "$REPO_ROOT/dotfiles/hermes-model-preload.service" "$PRELOAD_DST" &
   echo "✅ hermes-model-preload.service updated"
 else
   echo "✅ hermes-model-preload.service — no changes"
+fi
+
+# ── 6c. Native HVE skills validation ──────────────────────────────────────────
+skill_count=$(find "$SKILLS_DIR" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+if [ ! -d "$SKILLS_DIR" ] || [ "$skill_count" -lt 5 ]; then
+  echo "ERROR: expected native skills in $SKILLS_DIR (found $skill_count SKILL.md files)"
+  exit 1
+fi
+echo "✅ Native skills available at $SKILLS_DIR ($skill_count files)"
+
+SKILL_DIFF=$(git diff --name-only "$OLD_HEAD" HEAD -- 'skills/**/*.md')
+if [ -n "$SKILL_DIFF" ]; then
+  echo "→ Native skills changed in repo pull:"
+  echo "$SKILL_DIFF"
+  RESTART_NEEDED=true
+else
+  echo "✅ Native skills — no changes in pull"
 fi
 
 # ── 7. Restart if needed ──────────────────────────────────────────────────────
