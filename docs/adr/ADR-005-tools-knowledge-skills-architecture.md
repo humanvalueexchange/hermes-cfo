@@ -84,6 +84,42 @@ search_knowledge_vault MCP tool ← Hermes queries here
 
 ---
 
+## The Dual-Plane Model
+
+*Added 2026-05-31 following team architecture review (Grok, Gemini/Google DeepMind, Atlas/Microsoft, CTO).*
+
+The four-layer capability model above describes **what** Hermes knows. The dual-plane model describes **how** Hermes grounds its responses at runtime.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  SYNCED PLANE (indexed, persisted, sovereign)           │
+│  ─────────────────────────────────────────────────────  │
+│  LanceDB vector index    ← PDF library (27+ books)      │
+│  Obsidian vault          ← IBIS notes, ADRs, runbooks   │
+│  Manifests / state       ← provenance + freshness       │
+│                                                         │
+│  Retrieval: hybrid BM25 + vector + local reranker       │
+│  Write:     staged pipeline with trust-tier governance  │
+└─────────────────────────────────────────────────────────┘
+            ↕  Hermes grounds responses against both planes
+┌─────────────────────────────────────────────────────────┐
+│  FEDERATED PLANE (live at runtime, never persisted)     │
+│  ─────────────────────────────────────────────────────  │
+│  Kraken, mempool.space, Predyx, LND  ← live MCP tools  │
+│  X/Grok narrative intelligence       ← volatile signal  │
+│  GitHub repo status                  ← issue/PR state   │
+│                                                         │
+│  Rule: federated data NEVER writes to vault directly.   │
+│  It can inform a response or be staged for approval.    │
+└─────────────────────────────────────────────────────────┘
+```
+
+**The critical invariant:** Hermes always knows which plane a piece of context came from. A fact from the synced plane carries provenance and can be cited. A fact from the federated plane is volatile and must be labeled as such.
+
+This is the grounding architecture for all future Hermes intelligence. Every Skill must declare which planes it draws from.
+
+---
+
 ## Principles
 
 ### 1. Knowledge is a first-class capability layer
@@ -97,6 +133,11 @@ PDFs land locally. Embeddings are computed locally. The index lives on NVMe. No 
 
 ### 4. search_knowledge_vault is the knowledge interface
 All knowledge retrieval flows through one MCP tool. The tool abstracts the vector index — Hermes does not need to know about LanceDB, embeddings, or chunking. It asks a question; the tool returns relevant excerpts with provenance (book, author, chapter, page).
+
+*Phase 0 (Issue #46): nomic semantic search. Phase 3 (Issue #51): upgraded to hybrid BM25 + vector + local reranker (bge-reranker-large on DGX GPU). All retrieval layers run locally.*
+
+### 6. Synced plane and federated plane are architecturally distinct
+Knowledge that is indexed and persisted (synced plane) is categorically different from knowledge fetched live at runtime (federated plane). Synced plane sources carry provenance, trust tier, and freshness metadata. Federated plane sources are volatile by definition — they can inform a response but cannot directly create permanent vault nodes. This invariant must be enforced at the Skill layer, not left to Hermes's judgment.
 
 ### 5. Skills define how to combine Tools and Knowledge
 A SKILL.md file specifies:
@@ -160,7 +201,10 @@ No code changes required. The knowledge surface grows with the library.
 - **ADR-001** — original three-layer architecture. This ADR adds Knowledge as Layer 3, shifting Skills to Layer 4.
 - **ADR-003** — SOUL.md as live-loaded identity. SOUL.md now points to skills; skills point to knowledge.
 - **Issue #44** — SOUL.md → SKILL.md decomposition. Skills are now the composition layer for Tools + Knowledge.
-- **Issue #46** — implementation of LanceDB wiring for `search_knowledge_vault`.
+- **Issue #46** — implementation of LanceDB wiring for `search_knowledge_vault` (Phase 0 retrieval).
+- **Issue #51** — hybrid search upgrade, trust tiers, staged write pipeline, dual-plane substrate.
+- **Issue #50** — Obsidian IBIS vault + ExcaliBrain visualization (front-end on top of #51 substrate).
+- **Issue #52** — X/Grok federated narrative intelligence (federated plane, never synced).
 
 ---
 
