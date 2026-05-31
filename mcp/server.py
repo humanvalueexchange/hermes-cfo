@@ -33,6 +33,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+from tools.knowledge import search_knowledge_vault as knowledge_search
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -49,7 +50,6 @@ from tools.mempool.tools import (  # noqa: E402
 REPO_DIR = Path.home() / "hermes-cfo"
 BRIEFINGS_DIR = REPO_DIR / "logs" / "briefings"
 TASKS_FILE = REPO_DIR / "logs" / "tasks" / "tasks.json"
-VAULT_DIR = Path("/hve-library/vault/hve-knowledge-vault")
 OLLAMA_API = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
 # ── server ───────────────────────────────────────────────────────────────────
@@ -233,33 +233,7 @@ def search_knowledge_vault(query: str, max_results: int = 5) -> str:
         query: Search terms (e.g. 'bitcoin risk management', 'trading psychology')
         max_results: Maximum number of matching files to return (default 5, max 20)
     """
-    if not VAULT_DIR.exists():
-        return "Knowledge vault not found at /hve-library/vault/hve-knowledge-vault."
-
-    max_results = min(int(max_results), 20)
-    code, output = _run(
-        ["grep", "-r", "-i", "-l", "--include=*.md", query, str(VAULT_DIR)],
-        timeout=15,
-    )
-
-    if code != 0 or not output.strip():
-        return f"No results found for '{query}' in the HVE knowledge vault."
-
-    matched_files = output.strip().split("\n")[:max_results]
-    results = []
-    for fpath in matched_files:
-        p = Path(fpath)
-        relative = p.relative_to(VAULT_DIR)
-        # extract up to 10 matching lines for context
-        _, lines = _run(
-            ["grep", "-i", "-n", "-m", "10", query, fpath],
-            timeout=10,
-        )
-        snippet = lines[:500] if lines else "(no preview available)"
-        results.append(f"### {relative}\n{snippet}")
-
-    header = f"Found {len(matched_files)} result(s) for '{query}' in HVE vault:\n\n"
-    return header + "\n\n---\n\n".join(results)
+    return knowledge_search(query, max_results, _run)
 
 
 @mcp.tool()

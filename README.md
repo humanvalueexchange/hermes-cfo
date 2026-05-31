@@ -116,9 +116,11 @@ hermes-cfo/
 │   └── hve/                          ← native Hermes SKILL.md playbooks loaded via skills.external_dirs
 ├── mcp/
 │   ├── server.py                     ← Hermes MCP server entrypoint
+│   └── tools/knowledge/search.py     ← LanceDB semantic search script run via knowledge venv
 │   └── market_intelligence.py        ← prediction-market intelligence helper
 ├── tools/
 │   ├── mempool/                      ← mempool.space on-chain + Lightning MCP helpers
+│   ├── knowledge.py                  ← server-side knowledge search orchestration + fallback
 │   └── *.py                          ← treasury/runtime support utilities
 └── scripts/
     ├── hermes-install.sh             ← bootstrap on fresh DGX Spark

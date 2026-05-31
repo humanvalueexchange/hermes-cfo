@@ -8,6 +8,8 @@ PORT="${HVE_MCP_PORT:-8765}"
 ENV_FILE="${HOME}/.hermes-mcp.env"
 CONFIG_FILE="${HOME}/.hermes/profiles/main/config.yaml"
 SKILLS_DIR="${HOME}/hermes-cfo/skills/hve"
+KNOWLEDGE_PYTHON="${HOME}/.hve-knowledge/venv/bin/python3"
+KNOWLEDGE_SEARCH_SCRIPT="${HOME}/hermes-cfo/mcp/tools/knowledge/search.py"
 PASS=0
 FAIL=0
 
@@ -102,6 +104,8 @@ check "skills external_dirs configured" "$(grep -q '/home/hans/hermes-cfo/skills
 check "native skills directory exists" "$([ -d "${SKILLS_DIR}" ] && echo ok || echo "missing ${SKILLS_DIR}")"
 skill_count=$(find "${SKILLS_DIR}" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
 check "native HVE skill files present" "$([ "${skill_count}" = "5" ] && echo ok || echo "expected 5, got ${skill_count}")"
+check "knowledge venv python exists" "$([ -x "${KNOWLEDGE_PYTHON}" ] && echo ok || echo "missing ${KNOWLEDGE_PYTHON}")"
+check "knowledge search script exists" "$([ -f "${KNOWLEDGE_SEARCH_SCRIPT}" ] && echo ok || echo "missing ${KNOWLEDGE_SEARCH_SCRIPT}")"
 
 # mempool tools presence
 check "mempool tool: get_mempool_fees" "$(echo "${mcp_resp}" | grep -q 'get_mempool_fees' && echo ok || echo "tool not registered")"
