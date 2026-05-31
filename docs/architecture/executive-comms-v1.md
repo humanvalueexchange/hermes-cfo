@@ -46,8 +46,8 @@ This spec defines **Apollo** — the Executive Communications Hub — and the pr
 ## 3. Apollo Hardware
 
 **Platform:** Raspberry Pi 5 — 16 GB RAM + Hailo-8 accelerator  
-**Static LAN IP:** `10.0.0.80`  
-**Tailscale IP:** `100.85.145.XX` *(assigned at provisioning)*  
+**Static LAN IP:** `[APOLLO_LAN_IP]`  
+**Tailscale IP:** `[APOLLO_TAILSCALE_IP]` *(assigned at provisioning)*  
 **Tailscale network:** Shared with DGX Spark (`[DGX_TAILSCALE_IP]`)
 
 Apollo is the only dedicated communications infrastructure node. It runs:
@@ -66,7 +66,7 @@ A lightweight HTTP/REST service hosted on Apollo Pi that implements the [Model C
 **Stack:** Python 3.11 + FastAPI + SQLite (durable, survives reboots)  
 **Port:** `8090` (MCP) / `8091` (admin REST)  
 **Access:** Tailscale only — not exposed to public internet  
-**URL:** `http://100.85.145.XX:8090`
+**URL:** `http://[APOLLO_TAILSCALE_IP]:8090`
 
 ### 4.2 Data model
 
@@ -184,8 +184,8 @@ For session-bound agents (Claude, Atlas), a lightweight cron job on the DGX Spar
 
 ```bash
 # On DGX Spark — runs at 08:55 UTC daily (before Hermes 09:00 briefing window)
-curl -s http://100.85.145.XX:8090/api/inbox/claude-cto | jq . > ~/.hermes/exec-inbox/claude-cto.json
-curl -s http://100.85.145.XX:8090/api/inbox/atlas-coo  | jq . > ~/.hermes/exec-inbox/atlas-coo.json
+curl -s http://[APOLLO_TAILSCALE_IP]:8090/api/inbox/claude-cto | jq . > ~/.hermes/exec-inbox/claude-cto.json
+curl -s http://[APOLLO_TAILSCALE_IP]:8090/api/inbox/atlas-coo  | jq . > ~/.hermes/exec-inbox/atlas-coo.json
 ```
 
 When Hans opens the CTO or COO session, the inbox is surfaced automatically. This is the "good morning, you have N messages" experience.
@@ -200,7 +200,7 @@ Hermes is the only fully autonomous executive and the primary message producer. 
 # In common.py — post_to_exec_comms()
 import requests
 
-APOLLO_MCP_URL = "http://100.85.145.XX:8090"
+APOLLO_MCP_URL = "http://[APOLLO_TAILSCALE_IP]:8090"
 
 def post_to_exec_comms(channel, subject, body, tags=None):
     requests.post(f"{APOLLO_MCP_URL}/api/messages", json={
@@ -287,8 +287,8 @@ Hans can also **post into Mattermost** and have it routed back into the MCP mess
 
 ```
 Day 1 — Infrastructure
-  1. Install new switch → DGX ethernet active (10.0.0.79 wired)
-  2. Apollo Pi 5 out of box → Pi OS 64-bit Bookworm → static IP 10.0.0.80
+  1. Install new switch → DGX ethernet active (`[DGX_LAN_IP]` wired)
+  2. Apollo Pi 5 out of box → Pi OS 64-bit Bookworm → static IP `[APOLLO_LAN_IP]`
   3. Tailscale on Apollo → join same network as DGX
   4. Hailo-8 driver install → hailortcli fw-control identify
 
@@ -333,7 +333,7 @@ hermes-cfo/
 |---|---|---|---|
 | ~~1~~ | ~~Mika preferred integration method (§7)~~ | ~~Mika~~ | ✅ Resolved — session-bound, Option B |
 | ~~2~~ | ~~xAI API key available on DGX Spark?~~ | ~~Hans~~ | ✅ Not needed — Mika is session-bound |
-| 3 | Apollo Pi static IP confirmed as `10.0.0.80`? | Hans | Proposed by CTO |
+| 3 | Apollo Pi static IP confirmed as `[APOLLO_LAN_IP]`? | Hans | Proposed by CTO |
 | 4 | Tailscale account — is Apollo added to same tailnet as DGX? | Hans | First step Day 1 |
 | 5 | Mattermost admin credentials | Hans | Generate at install |
 
