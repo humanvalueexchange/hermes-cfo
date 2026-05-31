@@ -48,7 +48,7 @@ except Exception:
     print("parse_error")
 PY
 )
-check "agent card tool count" "$([ "${agent_card_tool_count}" = "14" ] && echo ok || echo "expected 14, got ${agent_card_tool_count}")"
+check "agent card tool count" "$([ "${agent_card_tool_count}" = "17" ] && echo ok || echo "expected 17, got ${agent_card_tool_count}")"
 
 # MCP endpoint — streamable-http requires session init before tools/list
 API_KEY=$(grep HVE_MCP_API_KEY "${ENV_FILE}" 2>/dev/null | cut -d= -f2- || echo "")
@@ -86,7 +86,7 @@ except Exception:
     print("parse_error")
 PY
 )
-check "MCP tools count" "$([ "${mcp_tool_count}" = "14" ] && echo ok || echo "expected 14, got ${mcp_tool_count}")"
+check "MCP tools count" "$([ "${mcp_tool_count}" = "17" ] && echo ok || echo "expected 17, got ${mcp_tool_count}")"
 
 missing_tools=()
 for tool in get_mempool_fees get_mempool_depth get_block_status get_lightning_network_stats; do
@@ -112,6 +112,9 @@ check "mempool tool: get_mempool_fees" "$(echo "${mcp_resp}" | grep -q 'get_memp
 check "mempool tool: get_mempool_depth" "$(echo "${mcp_resp}" | grep -q 'get_mempool_depth' && echo ok || echo "tool not registered")"
 check "mempool tool: get_block_status" "$(echo "${mcp_resp}" | grep -q 'get_block_status' && echo ok || echo "tool not registered")"
 check "mempool tool: get_lightning_network_stats" "$(echo "${mcp_resp}" | grep -q 'get_lightning_network_stats' && echo ok || echo "tool not registered")"
+check "GitHub tool: read_github_issue" "$(echo "${mcp_resp}" | grep -q 'read_github_issue' && echo ok || echo "tool not registered")"
+check "GitHub tool: comment_github_issue" "$(echo "${mcp_resp}" | grep -q 'comment_github_issue' && echo ok || echo "tool not registered")"
+check "GitHub tool: list_github_issues" "$(echo "${mcp_resp}" | grep -q 'list_github_issues' && echo ok || echo "tool not registered")"
 
 # tasks file
 TASKS_FILE="${HOME}/hermes-cfo/logs/tasks/tasks.json"

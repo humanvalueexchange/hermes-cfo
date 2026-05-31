@@ -22,28 +22,31 @@ from datetime import datetime
 from pathlib import Path
 
 from market_intelligence import get_market_intelligence_data
-from tools.mempool.tools import (
-    get_block_status as _mempool_get_block_status,
-    get_lightning_network_stats as _mempool_get_lightning_stats,
-    get_mempool_depth as _mempool_get_mempool_depth,
-    get_mempool_fees as _mempool_get_mempool_fees,
-)
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from tools.knowledge import search_knowledge_vault as knowledge_search
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from tools.github_issues import (  # noqa: E402
+    comment_github_issue as github_comment_issue,
+    list_github_issues as github_list_issues,
+    read_github_issue as github_read_issue,
+)
+from tools.knowledge import search_knowledge_vault as knowledge_search  # noqa: E402
 from tools.mempool.tools import (  # noqa: E402
     get_block_status,
+    get_block_status as _mempool_get_block_status,
     get_lightning_network_stats,
+    get_lightning_network_stats as _mempool_get_lightning_stats,
     get_mempool_depth,
+    get_mempool_depth as _mempool_get_mempool_depth,
     get_mempool_fees,
+    get_mempool_fees as _mempool_get_mempool_fees,
 )
 
 # ── paths ────────────────────────────────────────────────────────────────────
@@ -51,6 +54,25 @@ REPO_DIR = Path.home() / "hermes-cfo"
 BRIEFINGS_DIR = REPO_DIR / "logs" / "briefings"
 TASKS_FILE = REPO_DIR / "logs" / "tasks" / "tasks.json"
 OLLAMA_API = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+TOOL_NAMES = [
+    "get_btc_forecast",
+    "get_market_intelligence",
+    "get_mempool_fees",
+    "get_mempool_depth",
+    "get_block_status",
+    "get_lightning_network_stats",
+    "get_morning_briefing",
+    "get_capability_assessment",
+    "search_knowledge_vault",
+    "create_task",
+    "get_client_context",
+    "get_node_diagnostic",
+    "suggest_backlog_issue",
+    "vote_backlog_issue",
+    "read_github_issue",
+    "comment_github_issue",
+    "list_github_issues",
+]
 
 # ── server ───────────────────────────────────────────────────────────────────
 # DNS rebinding protection disabled — we enforce auth via X-HVE-API-Key instead.
@@ -61,8 +83,8 @@ mcp = FastMCP(
         "You are connected to the Hermes CFO intelligence system running on the "
         "Human Value Exchange DGX Spark. Use these tools to retrieve financial "
         "forecasts, live mempool and Lightning intelligence, morning briefings, "
-        "vault knowledge, and client context on behalf of HVE clients and the "
-        "executive team."
+        "vault knowledge, GitHub issue context, and client context on behalf of "
+        "HVE clients and the executive team."
     ),
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
 )
@@ -488,6 +510,39 @@ def suggest_backlog_issue(title: str, hypothesis: str = "", context: str = "", d
         return f"ERROR creating issue: {e}"
 
 
+@mcp.tool()
+def read_github_issue(issue_number: int, repo: str = "hermes-cfo") -> str:
+    """
+    Read a GitHub issue including its body and all comments.
+
+    Use this when Hans asks you to review a specific issue, RFC, or ADR.
+    Returns the issue title, body, state, labels, and full comment thread.
+    """
+    return github_read_issue(issue_number, repo)
+
+
+@mcp.tool()
+def comment_github_issue(issue_number: int, comment_body: str, repo: str = "hermes-cfo") -> str:
+    """
+    Post a comment on a GitHub issue.
+
+    Use this to participate in RFCs, architecture reviews, and issue discussions.
+    Always identify Hermes clearly in the posted comment.
+    """
+    return github_comment_issue(issue_number, comment_body, repo)
+
+
+@mcp.tool()
+def list_github_issues(repo: str = "hermes-cfo", state: str = "open", label: str = "", limit: int = 20) -> str:
+    """
+    List GitHub issues from a HVE repo.
+
+    Use this to browse the backlog, find open issues in a domain, or check
+    what's been recently closed.
+    """
+    return github_list_issues(repo, state, label, limit)
+
+
 # ── Mempool.space tools ───────────────────────────────────────────────────────
 mcp.tool()(_mempool_get_mempool_fees)
 mcp.tool()(_mempool_get_mempool_depth)
@@ -501,19 +556,13 @@ AGENT_CARD = {
     "description": (
         "Hermes CFO intelligence system for Human Value Exchange. "
         "Provides BTC forecasts, mempool and Lightning intelligence, "
-        "morning briefings, knowledge vault search, task management, "
-        "and system context."
+        "morning briefings, knowledge vault search, GitHub issue review, "
+        "task management, and system context."
     ),
     "url": os.environ.get("HVE_MCP_PUBLIC_URL", "http://localhost:8765"),
     "version": "1.0.0",
     "capabilities": {
-        "tools": ["get_btc_forecast", "get_market_intelligence", "get_mempool_fees",
-                  "get_mempool_depth", "get_block_status", "get_lightning_network_stats",
-                  "get_morning_briefing", "get_capability_assessment",
-                  "search_knowledge_vault", "create_task", "get_client_context",
-                  "get_node_diagnostic", "suggest_backlog_issue", "vote_backlog_issue",
-                  "get_mempool_fees", "get_mempool_depth", "get_block_status",
-                  "get_lightning_network_stats"],
+        "tools": TOOL_NAMES,
     },
 }
 

@@ -64,6 +64,9 @@ If you start writing "I will call", "I will run", "let me use", or "I'll invoke"
 | Tracked task creation | `create_task` |
 | Backlog idea filing | `suggest_backlog_issue` |
 | Backlog voting | `vote_backlog_issue` |
+| GitHub issue review | `read_github_issue` |
+| GitHub issue comment | `comment_github_issue` |
+| GitHub backlog scan | `list_github_issues` |
 
 ## Communication Style
 
