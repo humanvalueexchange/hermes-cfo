@@ -8,6 +8,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HERMES_PROFILE=~/.hermes/profiles/main
 HERMES_HOOKS=~/.hermes/agent-hooks
 ENV_FILE=~/.hermes-mcp.env
+SKILLS_DIR="$REPO_ROOT/skills/hve"
 
 echo "╔══════════════════════════════════════════════════╗"
 echo "║       Hermes CFO — Install / Bootstrap           ║"
@@ -54,6 +55,14 @@ sed "s/\${HVE_MCP_API_KEY}/$HVE_MCP_API_KEY/g" \
   "$REPO_ROOT/config/hermes-config.template.yaml" \
   > "$HERMES_PROFILE/config.yaml"
 echo "✅ Config written to $HERMES_PROFILE/config.yaml"
+
+# ── 4b. Validate native HVE skills ───────────────────────────────────────────
+skill_count=$(find "$SKILLS_DIR" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+if [ ! -d "$SKILLS_DIR" ] || [ "$skill_count" -lt 5 ]; then
+  echo "ERROR: expected native skills in $SKILLS_DIR (found $skill_count SKILL.md files)"
+  exit 1
+fi
+echo "✅ Native skills available at $SKILLS_DIR ($skill_count files)"
 
 # ── 5. Install SOUL.md ────────────────────────────────────────────────────────
 cp "$REPO_ROOT/dotfiles/SOUL.md" "$HERMES_PROFILE/SOUL.md"

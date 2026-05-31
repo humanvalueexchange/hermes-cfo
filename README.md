@@ -51,13 +51,31 @@ CEO (Hans) ──Telegram──▶ Hermes Gateway
                  │
                  ▼
             MCP Tools
-    ┌──────────────────────┐
-    │ get_node_diagnostic  │
-    │ get_btc_forecast     │
-    │ get_morning_briefing │
-    │ suggest_backlog_issue│
-    │ vote_backlog_issue   │
-    └──────────────────────┘
+            ┌──────────────────────────────┐
+            │ get_node_diagnostic          │
+            │ get_btc_forecast             │
+            │ get_market_intelligence      │
+            │ get_mempool_fees             │
+            │ get_mempool_depth            │
+            │ get_block_status             │
+            │ get_lightning_network_stats  │
+            │ get_morning_briefing         │
+            │ get_client_context           │
+            │ get_capability_assessment    │
+            │ search_knowledge_vault       │
+            │ create_task                  │
+            │ suggest_backlog_issue        │
+            │ vote_backlog_issue           │
+            └──────────────────────────────┘
+
+                  Native Skills
+            ┌──────────────────────────────┐
+            │ bitcoin-intelligence         │
+            │ node-health                  │
+            │ treasury-operations          │
+            │ knowledge-management         │
+            │ backlog-management           │
+            └──────────────────────────────┘
 ```
 
 ---
@@ -88,12 +106,20 @@ hermes-cfo/
 ├── docs/
 │   └── SOUL.md                       ← REMOVED — see dotfiles/SOUL.md
 ├── dotfiles/
-│   ├── SOUL.md                       ← Hermes identity, rules, HVE vision, model roles (deploy → ~/.hermes/profiles/main/)
+│   ├── SOUL.md                       ← Hermes identity + always-on guardrails (deploy → ~/.hermes/profiles/main/)
 │   ├── hermes-*.service              ← systemd unit files
 │   └── inject-market-data.sh        ← pre-LLM hook: live BTC price injection
 ├── config/
 │   ├── hermes-config.template.yaml   ← config template (secrets as ${PLACEHOLDERS})
 │   └── hermes-env.template           ← .env template — what secrets are needed
+├── skills/
+│   └── hve/                          ← native Hermes SKILL.md playbooks loaded via skills.external_dirs
+├── mcp/
+│   ├── server.py                     ← Hermes MCP server entrypoint
+│   └── market_intelligence.py        ← prediction-market intelligence helper
+├── tools/
+│   ├── mempool/                      ← mempool.space on-chain + Lightning MCP helpers
+│   └── *.py                          ← treasury/runtime support utilities
 └── scripts/
     ├── hermes-install.sh             ← bootstrap on fresh DGX Spark
     ├── hermes-deploy.sh              ← deploy config changes to live runtime

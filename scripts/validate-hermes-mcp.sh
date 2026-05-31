@@ -6,6 +6,8 @@ set -euo pipefail
 
 PORT="${HVE_MCP_PORT:-8765}"
 ENV_FILE="${HOME}/.hermes-mcp.env"
+CONFIG_FILE="${HOME}/.hermes/profiles/main/config.yaml"
+SKILLS_DIR="${HOME}/hermes-cfo/skills/hve"
 PASS=0
 FAIL=0
 
@@ -33,6 +35,18 @@ check "API key set" "$(grep -q 'HVE_MCP_API_KEY=.' "${ENV_FILE}" 2>/dev/null && 
 card=$(curl -sf "http://127.0.0.1:${PORT}/.well-known/agent.json" 2>/dev/null || echo "")
 check "agent card reachable" "$([ -n "${card}" ] && echo ok || echo "http://127.0.0.1:${PORT}/.well-known/agent.json unreachable")"
 check "agent card has name" "$(echo "${card}" | grep -q 'HVE Hermes' && echo ok || echo "name field missing")"
+agent_card_tool_count=$(CARD="${card}" python3 - <<'PY'
+import json
+import os
+text = os.environ.get("CARD", "")
+try:
+    data = json.loads(text)
+    print(len(data.get("capabilities", {}).get("tools", [])))
+except Exception:
+    print("parse_error")
+PY
+)
+check "agent card tool count" "$([ "${agent_card_tool_count}" = "14" ] && echo ok || echo "expected 14, got ${agent_card_tool_count}")"
 
 # MCP endpoint — streamable-http requires session init before tools/list
 API_KEY=$(grep HVE_MCP_API_KEY "${ENV_FILE}" 2>/dev/null | cut -d= -f2- || echo "")
@@ -55,6 +69,39 @@ mcp_resp=$(curl -sf -X POST "http://127.0.0.1:${PORT}/mcp" \
     -H "mcp-session-id: ${SESSION_ID}" \
     -d '{"jsonrpc":"2.0","method":"tools/list","id":2}' 2>/dev/null || echo "")
 check "MCP tools list returned" "$(echo "${mcp_resp}" | grep -q 'get_btc_forecast' && echo ok || echo "tools not found in response")"
+mcp_tool_count=$(MCP_RESP="${mcp_resp}" python3 - <<'PY'
+import json
+import os
+
+text = os.environ.get("MCP_RESP", "")
+for line in text.splitlines():
+    if line.startswith("data: "):
+        text = line[6:]
+try:
+    data = json.loads(text)
+    print(len(data.get("result", {}).get("tools", [])))
+except Exception:
+    print("parse_error")
+PY
+)
+check "MCP tools count" "$([ "${mcp_tool_count}" = "14" ] && echo ok || echo "expected 14, got ${mcp_tool_count}")"
+
+missing_tools=()
+for tool in get_mempool_fees get_mempool_depth get_block_status get_lightning_network_stats; do
+    if ! echo "${mcp_resp}" | grep -q "${tool}"; then
+        missing_tools+=("${tool}")
+    fi
+done
+if [ "${#missing_tools[@]}" -eq 0 ]; then
+    check "Mempool tools registered" "ok"
+else
+    check "Mempool tools registered" "missing ${missing_tools[*]}"
+fi
+
+check "skills external_dirs configured" "$(grep -q '/home/hans/hermes-cfo/skills/hve' "${CONFIG_FILE}" 2>/dev/null && echo ok || echo "skills/hve not configured in ${CONFIG_FILE}")"
+check "native skills directory exists" "$([ -d "${SKILLS_DIR}" ] && echo ok || echo "missing ${SKILLS_DIR}")"
+skill_count=$(find "${SKILLS_DIR}" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+check "native HVE skill files present" "$([ "${skill_count}" = "5" ] && echo ok || echo "expected 5, got ${skill_count}")"
 
 # tasks file
 TASKS_FILE="${HOME}/hermes-cfo/logs/tasks/tasks.json"

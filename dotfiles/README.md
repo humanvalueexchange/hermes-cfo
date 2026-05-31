@@ -24,6 +24,20 @@ These files are **templates and live copies** — the authoritative source of tr
 
 ---
 
+## Native Skills
+
+Hermes native skills are loaded directly from the repository via `skills.external_dirs` in `config.yaml`:
+
+```yaml
+skills:
+  external_dirs:
+    - /home/hans/hermes-cfo/skills/hve
+```
+
+Changes to `skills/hve/**/SKILL.md` require a Hermes gateway restart after deploy.
+
+---
+
 ## Deploy Commands
 
 ```bash

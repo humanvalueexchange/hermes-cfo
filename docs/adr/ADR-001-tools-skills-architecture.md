@@ -72,17 +72,20 @@ A Tool must:
 
 ### 3. Skills are composable and emergent
 A Skill is a documented, repeatable pattern of tool calls:
-- Defined in SOUL.md (implicit skill) or `skills/` directory (explicit skill)
+- Defined as a `SKILL.md` document in `skills/`
 - Can be created by Hermes when it discovers a useful combination
 - Graduated to `skills/` directory when used 3+ times reliably
 - Reviewed by CTO before being treated as production
 
-### 4. SOUL.md is the skill registry
-SOUL.md serves dual purpose:
-- Tool Registry: *when to call which tool*
-- Skill Playbooks: *how to compose tools for specific outcomes*
+### 4. SOUL.md stays lean; skills own playbooks
+SOUL.md remains the always-loaded identity and guardrail document:
+- Identity, mission, architecture, and hard constraints
+- Mandatory tool-enforcement guardrails that must remain in-context every turn
 
-As Hermes discovers new patterns, they surface to CTO for SOUL.md promotion.
+`skills/` owns the playbooks:
+- When to invoke a domain workflow
+- Which tool or terminal command to call for that workflow
+- Output and fallback rules for that workflow
 
 ---
 
@@ -95,18 +98,23 @@ humanvalueexchange/hermes-cfo/
 │   ├── market_intelligence.py # get_market_intelligence (Issue #31)
 │   ├── knowledge.py          # search_knowledge_vault
 │   └── ...
-├── skills/                   # Composed workflow implementations
-│   ├── morning_briefing.py   # run_morning_briefing (chains 3+ tools)
-│   ├── treasury_analysis.py  # run_treasury_analysis (Issue #15+)
-│   └── ...
+├── skills/                   # Native Hermes workflow documents
+│   └── hve/
+│       ├── bitcoin-intelligence/SKILL.md
+│       ├── node-health/SKILL.md
+│       ├── treasury-operations/SKILL.md
+│       ├── knowledge-management/SKILL.md
+│       └── backlog-management/SKILL.md
 ├── docs/
-│   ├── SOUL.md               # Tool Registry + Skill Playbooks
+│   ├── SOUL.md               # historical path (removed; see dotfiles/SOUL.md)
 │   ├── dev-loop-protocol.md
 │   └── adr/
 │       └── ADR-001-tools-skills-architecture.md  ← this file
+├── dotfiles/
+│   └── SOUL.md               # Lean identity + always-on guardrails
 └── scripts/
     └── hermes_mcp/
-        └── server.py         # FastMCP server — registers tools + skills
+        └── server.py         # FastMCP server — registers atomic tools
 ```
 
 ---
@@ -162,8 +170,8 @@ After publishing ADR-001, we noticed that **Microsoft 365 Copilot Studio** uses 
 | Microsoft Copilot | Hermes / ADR-001 |
 |---|---|
 | **Plugin** | **Tool** (`@mcp.tool()`) |
-| **Skill** | **Skill** (SOUL.md playbook or `skills/` dir) |
-| Plugin registry (manifest) | MCP Tool Registry in SOUL.md |
+| **Skill** | **Skill** (`skills/` dir) |
+| Plugin registry (manifest) | Always-on tool guardrails in SOUL.md + explicit `SKILL.md` playbooks |
 | Skills chain plugins | Skills chain tools |
 
 The architectural mapping is exact. A Plugin in Copilot is an atomic connector to an external API. A Skill is a goal-oriented capability that the agent composes from plugins.

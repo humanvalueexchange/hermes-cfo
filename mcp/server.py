@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -26,6 +27,17 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.mempool.tools import (  # noqa: E402
+    get_block_status,
+    get_lightning_network_stats,
+    get_mempool_depth,
+    get_mempool_fees,
+)
 
 # ── paths ────────────────────────────────────────────────────────────────────
 REPO_DIR = Path.home() / "hermes-cfo"
@@ -42,11 +54,20 @@ mcp = FastMCP(
     instructions=(
         "You are connected to the Hermes CFO intelligence system running on the "
         "Human Value Exchange DGX Spark. Use these tools to retrieve financial "
-        "forecasts, morning briefings, vault knowledge, and client context on "
-        "behalf of HVE clients and the executive team."
+        "forecasts, live mempool and Lightning intelligence, morning briefings, "
+        "vault knowledge, and client context on behalf of HVE clients and the "
+        "executive team."
     ),
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
 )
+
+for tool in (
+    get_mempool_fees,
+    get_mempool_depth,
+    get_block_status,
+    get_lightning_network_stats,
+):
+    mcp.tool()(tool)
 
 
 # ── auth middleware ──────────────────────────────────────────────────────────
@@ -492,13 +513,16 @@ AGENT_CARD = {
     "name": "HVE Hermes",
     "description": (
         "Hermes CFO intelligence system for Human Value Exchange. "
-        "Provides BTC forecasts, morning briefings, knowledge vault search, "
-        "task management, and system context."
+        "Provides BTC forecasts, mempool and Lightning intelligence, "
+        "morning briefings, knowledge vault search, task management, "
+        "and system context."
     ),
     "url": os.environ.get("HVE_MCP_PUBLIC_URL", "http://localhost:8765"),
     "version": "1.0.0",
     "capabilities": {
-        "tools": ["get_btc_forecast", "get_morning_briefing", "get_capability_assessment",
+        "tools": ["get_btc_forecast", "get_market_intelligence", "get_mempool_fees",
+                  "get_mempool_depth", "get_block_status", "get_lightning_network_stats",
+                  "get_morning_briefing", "get_capability_assessment",
                   "search_knowledge_vault", "create_task", "get_client_context",
                   "get_node_diagnostic", "suggest_backlog_issue", "vote_backlog_issue"],
     },
