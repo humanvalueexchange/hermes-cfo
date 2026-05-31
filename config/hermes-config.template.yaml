@@ -415,7 +415,8 @@ sessions:
   vacuum_after_prune: true
 skills:
   creation_nudge_interval: 15
-  external_dirs: []
+  external_dirs:
+  - /home/hans/hermes-cfo/skills/hve
   guard_agent_created: false
   inline_shell: false
   inline_shell_timeout: 10
@@ -494,10 +495,16 @@ mcp_servers:
       include:
       - get_node_diagnostic
       - get_btc_forecast
+      - get_mempool_fees
+      - get_mempool_depth
+      - get_block_status
+      - get_lightning_network_stats
       - get_morning_briefing
       - get_client_context
       - get_market_intelligence
       - get_capability_assessment
+      - search_knowledge_vault
+      - create_task
       - suggest_backlog_issue
       - vote_backlog_issue
 tts:

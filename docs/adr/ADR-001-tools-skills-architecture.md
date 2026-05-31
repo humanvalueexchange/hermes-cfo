@@ -11,7 +11,7 @@
 
 As we build out Hermes (HVE's AI CFO), we needed a principled answer to: *how does the agent's capability set grow over time without requiring constant engineering intervention?*
 
-The pattern emerged organically during development of Issues #18, #22, and #31 (prediction market intelligence feed). This ADR formalises it.
+The pattern emerged organically during development of Issues #18, #22, and #31. This ADR formalises it.
 
 ---
 
@@ -66,62 +66,60 @@ Each becomes a Tool. The combination becomes Hermes's world-model.
 A Tool must:
 - Do exactly one thing
 - Return structured data (JSON)
-- Complete in < 5s
-- Never fail silently (return error state, not hallucinated data)
+- Complete in < 5s where practical, or fail explicitly
+- Never fail silently
 - Require no LLM reasoning internally
 
 ### 3. Skills are composable and emergent
 A Skill is a documented, repeatable pattern of tool calls:
-- Defined in SOUL.md (implicit skill) or `skills/` directory (explicit skill)
+- Defined as a `SKILL.md` document in `skills/`
 - Can be created by Hermes when it discovers a useful combination
 - Graduated to `skills/` directory when used 3+ times reliably
 - Reviewed by CTO before being treated as production
 
-### 4. SOUL.md is identity — skills files are the operating manual
-*(Refined by Issue #44 — see Amendment below)*
+### 4. SOUL.md stays lean; skills own playbooks
+SOUL.md remains the always-loaded identity and guardrail document:
+- Identity, mission, architecture, and hard constraints
+- Mandatory tool-enforcement guardrails that must remain in-context every turn
 
-SOUL.md contains Hermes's identity, agent architecture, decision flow, hard constraints, and communication style. It does **not** contain tool invocation rules or numbered rule sections.
-
-Tool invocation logic and skill playbooks live in dedicated `SKILL.md` files (native Hermes format) under `skills/hve/`. SOUL.md contains a single short pointer: *"You have MCP tools available. The relevant skill file tells you exactly when and how to call each one."*
-
-As Hermes discovers new patterns, they surface to CTO for promotion to a new `SKILL.md` file.
+`skills/` owns the playbooks:
+- When to invoke a domain workflow
+- Which tool or terminal command to call for that workflow
+- Output and fallback rules for that workflow
 
 ---
 
-## File Structure (target state)
+## File Structure (current target state)
 
 ```
 humanvalueexchange/hermes-cfo/
-├── mcp/                      # MCP server + all tool implementations
-│   ├── server.py             # FastMCP server — registers all tools
-│   └── tools/                # Atomic MCP tool implementations (co-located with server)
-│       ├── mempool/
-│       │   ├── client.py     # urllib client — mempool.space
-│       │   └── tools.py      # get_mempool_fees, get_mempool_depth, get_block_status, get_lightning_network_stats
-│       └── ...               # future tool packages
-├── skills/                   # Composed workflow definitions (native Hermes SKILL.md format)
-│   └── hve/                  # HVE domain skills (loaded via config.yaml external_dirs)
-│       ├── bitcoin-intelligence/
-│       │   └── SKILL.md      # BTC price + mempool tools invocation rules
-│       ├── node-health/
-│       │   └── SKILL.md      # Node diagnostic invocation rules
-│       ├── treasury-operations/
-│       │   └── SKILL.md      # Morning briefing, forecast, market intelligence
-│       ├── knowledge-management/
-│       │   └── SKILL.md      # Knowledge vault + task creation
-│       └── backlog-management/
-│           └── SKILL.md      # Suggest + vote on GitHub backlog
+├── mcp/
+│   ├── server.py                    # FastMCP server — registers atomic tools
+│   └── tools/
+│       └── knowledge/search.py      # LanceDB semantic search script via knowledge venv
+├── tools/                           # Shared Python helpers used by MCP server
+│   ├── mempool/
+│   │   ├── client.py                # urllib client — mempool.space
+│   │   └── tools.py                 # get_mempool_fees, get_mempool_depth, get_block_status, get_lightning_network_stats
+│   └── knowledge.py                 # semantic search orchestration + grep fallback
+├── skills/
+│   └── hve/
+│       ├── bitcoin-intelligence/SKILL.md
+│       ├── node-health/SKILL.md
+│       ├── treasury-operations/SKILL.md
+│       ├── knowledge-management/SKILL.md
+│       └── backlog-management/SKILL.md
 ├── dotfiles/
-│   └── SOUL.md               # Hermes identity only (~100 lines) — no tool invocation rules
+│   └── SOUL.md                      # Lean identity + always-on guardrails
 ├── docs/
 │   ├── dev-loop-protocol.md
 │   └── adr/
-│       └── ADR-001-tools-skills-architecture.md  ← this file
+│       └── ADR-001-tools-skills-architecture.md
 └── scripts/
-    └── validate-hermes-mcp.sh  # MCP health validator (12 checks)
+    └── validate-hermes-mcp.sh       # MCP health and wiring validator
 ```
 
-**Key architectural constraint:** Tools live inside `mcp/` (co-located with `server.py`). This avoids `sys.path` manipulation and the `mcp/` directory shadowing the installed `mcp` pip package. Python adds the script's directory (`mcp/`) to `sys.path[0]` at runtime, so `from tools.mempool.tools import ...` resolves correctly.
+**Import-path constraint:** `mcp/server.py` must preserve a stable import path for both installed `mcp` packages and repo-local helper modules. Shared helpers therefore live in top-level `tools/`, and standalone subprocess entrypoints live under `mcp/tools/` when they must run in isolated environments.
 
 ---
 
@@ -133,6 +131,7 @@ humanvalueexchange/hermes-cfo/
 | Prediction Markets | Polymarket gamma-api | BTC event probabilities | Issue #31 |
 | Prediction Markets | Predyx | Lightning-native odds (API pending) | Issue #31 |
 | On-chain | mempool.space | Fee rates, block data, UTXO analysis | ✅ Live (Issue #42) |
+| Knowledge | LanceDB + nomic embeddings | Semantic library search | ✅ Live (Issue #46) |
 | Node | LND REST | Channel balances, routing, invoices | Mercury |
 | News | RSS/NewsAPI | BTC narrative signals | Issue #22 |
 | Macro | FRED API | Interest rates, M2, macro context | Backlog |
@@ -149,7 +148,7 @@ humanvalueexchange/hermes-cfo/
 - Clear separation: engineers build tools, Hermes builds skills
 
 **Risks to manage:**
-- LLM orchestration errors increase with tool count — mitigated by skills/ layer at 15+ tools
+- LLM orchestration errors increase with tool count — mitigated by skills/ layer as the tool surface grows
 - Tool quality gates must be strict — bad tools corrupt all downstream skills
 - Self-evolved skills need human review before production use
 
@@ -157,7 +156,7 @@ humanvalueexchange/hermes-cfo/
 
 ## Relation to Other Decisions
 
-- SOUL.md Tool Registry (Issue #2 Layer 1) — the enforcement mechanism for this pattern
+- SOUL.md tool-enforcement model — the guardrail mechanism for this pattern
 - Issue #18 dependency tree (#15, #16, #17) — each is a skill built on the market_intelligence tool
 - Mercury self-improvement loop — analogous pattern at the Bitcoin/payments layer
 
@@ -177,7 +176,7 @@ After publishing ADR-001, we noticed that **Microsoft 365 Copilot Studio** uses 
 |---|---|
 | **Plugin** | **Tool** (`@mcp.tool()`) |
 | **Skill** | **Skill** (`skills/hve/*/SKILL.md`) |
-| Plugin registry (manifest) | MCP Tool Registry in SOUL.md (pointer only) |
+| Plugin registry (manifest) | Always-on tool guardrails in SOUL.md + explicit `SKILL.md` playbooks |
 | Skills chain plugins | Skills chain tools |
 
 The architectural mapping is exact. A Plugin in Copilot is an atomic connector to an external API. A Skill is a goal-oriented capability that the agent composes from plugins.
@@ -201,50 +200,36 @@ The implication for HVE: every MCP tool we ship is not just a feature — it is 
 
 ### What changed
 
-SOUL.md grew to 259 lines across Issues #2–#42, accumulating 7 numbered Rules and a full tool registry table. Each new MCP tool required a new row and a new Rule section. At this growth rate, SOUL.md would become unmanageable and — critically — degrade LLM reasoning quality by consuming context that should be available for actual CFO work.
+SOUL.md grew across Issues #2–#42, accumulating numbered rules and a full tool registry table. Each new MCP tool required a new row and another rule section. At this growth rate, SOUL.md would become unmanageable and degrade reasoning quality by consuming context that should be available for actual CFO work.
 
-**Root cause:** We were using SOUL.md as both an identity document and a tool invocation manual. ADR-001 Principle #4 always called for skills separation — we just hadn't implemented it yet.
+**Root cause:** We were using SOUL.md as both an identity document and a tool invocation manual. ADR-001 Principle #4 always called for skills separation — we just had not implemented it yet.
 
 ### The refined principle
 
-| Before (Principle #4 original) | After (Issue #44 refinement) |
+| Before | After |
 |---|---|
-| SOUL.md = identity + skill registry | SOUL.md = identity only (~100 lines) |
+| SOUL.md = identity + skill registry | SOUL.md = identity + always-on guardrails |
 | Tool invocation rules in numbered Rule sections | Tool invocation rules in `SKILL.md` files |
-| Each new tool bloats SOUL.md | Each new tool gets its own domain skill |
+| Each new tool bloats SOUL.md | Each new tool updates a domain skill or adds a new skill |
 | Context consumed by invocation logic | Context available for CFO reasoning |
 
 ### Skill file format
 
-Skills are native Hermes `SKILL.md` files — YAML frontmatter + markdown instructions. Loaded by Hermes at startup from `skills/hve/` via `config.yaml: skills.external_dirs`. No Python code required. The skill file tells Hermes *when* and *how* to call each tool, including the PANIC STOP rule (binary: tool called or not — no narration).
+Skills are native Hermes `SKILL.md` files — YAML frontmatter + markdown instructions. Loaded by Hermes at startup from `skills/hve/` via `config.yaml: skills.external_dirs`.
 
-### Five HVE domain skills (Issue #44 deliverables)
+### Five HVE domain skills
 
-| Skill | Domain tools | Replaces |
-|---|---|---|
-| `bitcoin-intelligence` | `get_btc_price`, 4× mempool tools | Rule 1, Rule 7 |
-| `node-health` | `get_node_diagnostic` | Rule 5 |
-| `treasury-operations` | `get_morning_briefing`, `get_btc_forecast`, `get_market_intelligence`, `get_capability_assessment` | Rule 2, Rule 2b |
-| `knowledge-management` | `search_knowledge_vault`, `create_task` | (implicit) |
-| `backlog-management` | `suggest_backlog_issue`, `vote_backlog_issue` | Rule 6 |
-
-### SOUL.md target state (post-Issue #44)
-
-```
-Identity              (~10 lines)
-3-Agent Architecture  (~15 lines)
-Decision Flow         (~10 lines)
-Hard Constraints      (~10 lines)
-Skills pointer        (~5 lines)  ← one paragraph, no invocation detail
-Communication Style   (~8 lines)
-The Next 90 Days      (~8 lines)
-A Note to Hermes      (~8 lines)
-Total: ~75 lines
-```
+| Skill | Domain tools |
+|---|---|
+| `bitcoin-intelligence` | BTC spot command + 4x mempool tools |
+| `node-health` | `get_node_diagnostic` |
+| `treasury-operations` | `get_morning_briefing`, `get_btc_forecast`, `get_market_intelligence` |
+| `knowledge-management` | `search_knowledge_vault`, `create_task`, `get_client_context`, `get_capability_assessment` |
+| `backlog-management` | `suggest_backlog_issue`, `vote_backlog_issue` |
 
 ### Why this matters architecturally
 
-This amendment completes the original ADR-001 intent. Skills are now truly first-class citizens — not embedded footnotes in a system prompt. Each domain skill is versioned, independently maintainable, and composable. Adding a new MCP tool no longer touches SOUL.md at all — it gets a new row in the relevant SKILL.md or a new SKILL.md file.
+This amendment completes the original ADR-001 intent. Skills are now truly first-class citizens — not embedded footnotes in a system prompt. Each domain skill is versioned, independently maintainable, and composable.
 
 *"Identity is sovereign. Tools are capability. Skills are intelligence."*  
 *— HVE architecture evolution, Issue #44, 2026-05-30*

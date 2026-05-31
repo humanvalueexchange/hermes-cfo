@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -32,12 +33,23 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+from tools.knowledge import search_knowledge_vault as knowledge_search
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from tools.mempool.tools import (  # noqa: E402
+    get_block_status,
+    get_lightning_network_stats,
+    get_mempool_depth,
+    get_mempool_fees,
+)
 
 # ── paths ────────────────────────────────────────────────────────────────────
 REPO_DIR = Path.home() / "hermes-cfo"
 BRIEFINGS_DIR = REPO_DIR / "logs" / "briefings"
 TASKS_FILE = REPO_DIR / "logs" / "tasks" / "tasks.json"
-VAULT_DIR = Path("/hve-library/vault/hve-knowledge-vault")
 OLLAMA_API = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
 # ── server ───────────────────────────────────────────────────────────────────
@@ -48,11 +60,20 @@ mcp = FastMCP(
     instructions=(
         "You are connected to the Hermes CFO intelligence system running on the "
         "Human Value Exchange DGX Spark. Use these tools to retrieve financial "
-        "forecasts, morning briefings, vault knowledge, and client context on "
-        "behalf of HVE clients and the executive team."
+        "forecasts, live mempool and Lightning intelligence, morning briefings, "
+        "vault knowledge, and client context on behalf of HVE clients and the "
+        "executive team."
     ),
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
 )
+
+for tool in (
+    get_mempool_fees,
+    get_mempool_depth,
+    get_block_status,
+    get_lightning_network_stats,
+):
+    mcp.tool()(tool)
 
 
 # ── auth middleware ──────────────────────────────────────────────────────────
@@ -212,33 +233,7 @@ def search_knowledge_vault(query: str, max_results: int = 5) -> str:
         query: Search terms (e.g. 'bitcoin risk management', 'trading psychology')
         max_results: Maximum number of matching files to return (default 5, max 20)
     """
-    if not VAULT_DIR.exists():
-        return "Knowledge vault not found at /hve-library/vault/hve-knowledge-vault."
-
-    max_results = min(int(max_results), 20)
-    code, output = _run(
-        ["grep", "-r", "-i", "-l", "--include=*.md", query, str(VAULT_DIR)],
-        timeout=15,
-    )
-
-    if code != 0 or not output.strip():
-        return f"No results found for '{query}' in the HVE knowledge vault."
-
-    matched_files = output.strip().split("\n")[:max_results]
-    results = []
-    for fpath in matched_files:
-        p = Path(fpath)
-        relative = p.relative_to(VAULT_DIR)
-        # extract up to 10 matching lines for context
-        _, lines = _run(
-            ["grep", "-i", "-n", "-m", "10", query, fpath],
-            timeout=10,
-        )
-        snippet = lines[:500] if lines else "(no preview available)"
-        results.append(f"### {relative}\n{snippet}")
-
-    header = f"Found {len(matched_files)} result(s) for '{query}' in HVE vault:\n\n"
-    return header + "\n\n---\n\n".join(results)
+    return knowledge_search(query, max_results, _run)
 
 
 @mcp.tool()
@@ -505,13 +500,16 @@ AGENT_CARD = {
     "name": "HVE Hermes",
     "description": (
         "Hermes CFO intelligence system for Human Value Exchange. "
-        "Provides BTC forecasts, morning briefings, knowledge vault search, "
-        "task management, and system context."
+        "Provides BTC forecasts, mempool and Lightning intelligence, "
+        "morning briefings, knowledge vault search, task management, "
+        "and system context."
     ),
     "url": os.environ.get("HVE_MCP_PUBLIC_URL", "http://localhost:8765"),
     "version": "1.0.0",
     "capabilities": {
-        "tools": ["get_btc_forecast", "get_morning_briefing", "get_capability_assessment",
+        "tools": ["get_btc_forecast", "get_market_intelligence", "get_mempool_fees",
+                  "get_mempool_depth", "get_block_status", "get_lightning_network_stats",
+                  "get_morning_briefing", "get_capability_assessment",
                   "search_knowledge_vault", "create_task", "get_client_context",
                   "get_node_diagnostic", "suggest_backlog_issue", "vote_backlog_issue",
                   "get_mempool_fees", "get_mempool_depth", "get_block_status",
