@@ -67,3 +67,4 @@ htmlcov/
 .coverage
 dist/
 build/
+logs/tasks/tasks.json

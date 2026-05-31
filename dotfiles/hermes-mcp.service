@@ -2,6 +2,8 @@
 Description=HVE Hermes MCP Server
 Documentation=https://github.com/humanvalueexchange/hermes-cfo
 After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -14,8 +16,6 @@ Environment="HVE_MCP_HOST=0.0.0.0"
 Environment="HVE_MCP_PORT=8765"
 Restart=always
 RestartSec=10
-StartLimitIntervalSec=60
-StartLimitBurst=3
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=hermes-mcp

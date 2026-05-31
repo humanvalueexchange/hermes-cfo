@@ -35,7 +35,7 @@ check "agent card reachable" "$([ -n "${card}" ] && echo ok || echo "http://127.
 check "agent card has name" "$(echo "${card}" | grep -q 'HVE Hermes' && echo ok || echo "name field missing")"
 
 # MCP endpoint — streamable-http requires session init before tools/list
-API_KEY=$(grep HVE_MCP_API_KEY "${ENV_FILE}" 2>/dev/null | cut -d= -f2 || echo "")
+API_KEY=$(grep HVE_MCP_API_KEY "${ENV_FILE}" 2>/dev/null | cut -d= -f2- || echo "")
 
 # Step 1: initialize — get session ID from response header
 init_headers=$(curl -si -X POST "http://127.0.0.1:${PORT}/mcp" \
