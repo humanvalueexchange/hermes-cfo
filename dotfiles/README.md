@@ -17,8 +17,8 @@ These files are **templates and live copies** — the authoritative source of tr
 | `hermes-model-preload.service` | `~/.config/systemd/user/hermes-model-preload.service` | Loads all 3 Platonic stack models on boot. |
 | `hermes-gateway.service` | `~/.config/systemd/user/hermes-gateway.service` | Hermes Telegram gateway (main entry point). |
 | `hermes-mcp.service` | `~/.config/systemd/user/hermes-mcp.service` | Hermes MCP tool server. |
-| `hermes-data-refresh.service` | `~/.config/systemd/user/hermes-data-refresh.service` | Nightly market data refresh. |
-| `hermes-data-refresh.timer` | `~/.config/systemd/user/hermes-data-refresh.timer` | Systemd timer for data refresh (triggers service). |
+| `hermes-data-refresh.service` | `/etc/systemd/system/hermes-data-refresh.service` | Nightly market data refresh (**system** unit, `User=hans`). |
+| `hermes-data-refresh.timer` | `/etc/systemd/system/hermes-data-refresh.timer` | Systemd timer for data refresh (**system** unit, `WantedBy=timers.target`). |
 | `hermes-freqtrade.service` | `~/.config/systemd/user/hermes-freqtrade.service` | Freqtrade integration service. |
 | `hermes-telegram-log.service` | `~/.config/systemd/user/hermes-telegram-log.service` | Telegram audit log service. |
 
@@ -37,9 +37,15 @@ cp dotfiles/SOUL.md ~/.hermes/profiles/main/SOUL.md
 cp dotfiles/inject-market-data.sh ~/.hermes/agent-hooks/inject-market-data.sh
 chmod +x ~/.hermes/agent-hooks/inject-market-data.sh
 
-# Reload a specific systemd service after deploy
+# Reload a specific systemd user service after deploy
 systemctl --user daemon-reload
 systemctl --user restart hermes-gateway.service
+
+# Deploy data-refresh as SYSTEM unit (requires sudo)
+sudo cp ~/hermes-cfo/dotfiles/hermes-data-refresh.service /etc/systemd/system/
+sudo cp ~/hermes-cfo/dotfiles/hermes-data-refresh.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now hermes-data-refresh.timer
 ```
 
 ---

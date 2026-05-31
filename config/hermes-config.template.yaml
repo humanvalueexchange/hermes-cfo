@@ -45,7 +45,7 @@ agent:
     uwu: hewwo! i'm your fwiendwy assistant uwu~ i wiww twy my best to hewp you! *nuzzles
       your code* OwO what's this? wet me take a wook! i pwomise to be vewy hewpful
       >w<
-  reasoning_effort: medium
+  reasoning_effort: low
   restart_drain_timeout: 60
   service_tier: ''
   tool_use_enforcement: true
@@ -265,7 +265,7 @@ honcho: {}
 hooks:
   pre_llm_call:
   - command: ~/.hermes/agent-hooks/inject-market-data.sh
-    timeout: 8
+    timeout: 4
 hooks_auto_accept: true
 human_delay:
   max_ms: 2500
@@ -306,7 +306,7 @@ memory:
   user_char_limit: 1375
   user_profile_enabled: true
 model:
-  context_length: 131072
+  context_length: 262144
   default: qwen3.5:9b
   provider: ollama
 model_catalog:

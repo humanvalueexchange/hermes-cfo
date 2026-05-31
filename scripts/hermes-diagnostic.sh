@@ -1,4 +1,3 @@
-✅ Hermes hc alias LOADED
 #!/usr/bin/env bash
 # Hermes Self-Diagnostic Script
 # Run this FIRST when asked for a diagnostic report. Never fabricate output.

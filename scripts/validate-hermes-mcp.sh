@@ -22,7 +22,7 @@ check() {
 }
 
 # systemd service
-state=$(systemctl is-active hermes-mcp 2>/dev/null || echo "inactive")
+state=$(systemctl --user is-active hermes-mcp 2>/dev/null || echo "inactive")
 check "hermes-mcp service active" "$([ "$state" = "active" ] && echo ok || echo "$state")"
 
 # env file + API key
