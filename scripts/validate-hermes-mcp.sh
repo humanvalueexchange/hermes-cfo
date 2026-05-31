@@ -56,6 +56,12 @@ mcp_resp=$(curl -sf -X POST "http://127.0.0.1:${PORT}/mcp" \
     -d '{"jsonrpc":"2.0","method":"tools/list","id":2}' 2>/dev/null || echo "")
 check "MCP tools list returned" "$(echo "${mcp_resp}" | grep -q 'get_btc_forecast' && echo ok || echo "tools not found in response")"
 
+# mempool tools presence
+check "mempool tool: get_mempool_fees" "$(echo "${mcp_resp}" | grep -q 'get_mempool_fees' && echo ok || echo "tool not registered")"
+check "mempool tool: get_mempool_depth" "$(echo "${mcp_resp}" | grep -q 'get_mempool_depth' && echo ok || echo "tool not registered")"
+check "mempool tool: get_block_status" "$(echo "${mcp_resp}" | grep -q 'get_block_status' && echo ok || echo "tool not registered")"
+check "mempool tool: get_lightning_network_stats" "$(echo "${mcp_resp}" | grep -q 'get_lightning_network_stats' && echo ok || echo "tool not registered")"
+
 # tasks file
 TASKS_FILE="${HOME}/hermes-cfo/logs/tasks/tasks.json"
 check "tasks file exists" "$([ -f "${TASKS_FILE}" ] && echo ok || echo "missing ${TASKS_FILE}")"

@@ -21,6 +21,12 @@ from datetime import datetime
 from pathlib import Path
 
 from market_intelligence import get_market_intelligence_data
+from tools.mempool.tools import (
+    get_block_status as _mempool_get_block_status,
+    get_lightning_network_stats as _mempool_get_lightning_stats,
+    get_mempool_depth as _mempool_get_mempool_depth,
+    get_mempool_fees as _mempool_get_mempool_fees,
+)
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -487,6 +493,13 @@ def suggest_backlog_issue(title: str, hypothesis: str = "", context: str = "", d
         return f"ERROR creating issue: {e}"
 
 
+# ── Mempool.space tools ───────────────────────────────────────────────────────
+mcp.tool()(_mempool_get_mempool_fees)
+mcp.tool()(_mempool_get_mempool_depth)
+mcp.tool()(_mempool_get_block_status)
+mcp.tool()(_mempool_get_lightning_stats)
+
+
 # ── A2A agent card (future-proofing) ─────────────────────────────────────────
 AGENT_CARD = {
     "name": "HVE Hermes",
@@ -500,7 +513,9 @@ AGENT_CARD = {
     "capabilities": {
         "tools": ["get_btc_forecast", "get_morning_briefing", "get_capability_assessment",
                   "search_knowledge_vault", "create_task", "get_client_context",
-                  "get_node_diagnostic", "suggest_backlog_issue", "vote_backlog_issue"],
+                  "get_node_diagnostic", "suggest_backlog_issue", "vote_backlog_issue",
+                  "get_mempool_fees", "get_mempool_depth", "get_block_status",
+                  "get_lightning_network_stats"],
     },
 }
 
