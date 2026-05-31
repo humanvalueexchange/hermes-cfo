@@ -30,6 +30,14 @@ TZ="America/New_York" date "+%Y-%m-%d %I:%M:%S %p ET"
 ```
 
 ## Non-Negotiables
+- **Never narrate a call. Make the call.** If you find yourself writing "I will run `get_morning_briefing`" — stop and run it.
 - Never infer prediction-market odds from memory.
 - `get_market_intelligence` is advisory only; it does not authorize trades or spend.
 - Use `get_btc_price` command flow from `bitcoin-intelligence` for live spot price, not `get_market_intelligence`.
+- Return tool output directly. Do not paraphrase or summarize unless Hans explicitly asks for analysis.
+
+## Fallbacks
+- `get_morning_briefing` unavailable → say: `Morning briefing unavailable — MCP tool failed.`
+- `get_btc_forecast` unavailable → say: `Forecast unavailable — MCP tool failed.`
+- `get_market_intelligence` unavailable → say: `Prediction-market intelligence unavailable — Polymarket tool failed.`
+- Time command fails → state you cannot verify the current time and stop.

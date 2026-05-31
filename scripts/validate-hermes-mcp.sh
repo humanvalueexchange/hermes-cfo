@@ -103,6 +103,21 @@ check "native skills directory exists" "$([ -d "${SKILLS_DIR}" ] && echo ok || e
 skill_count=$(find "${SKILLS_DIR}" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')
 check "native HVE skill files present" "$([ "${skill_count}" = "5" ] && echo ok || echo "expected 5, got ${skill_count}")"
 
+# named skill directories
+for skill in bitcoin-intelligence node-health treasury-operations knowledge-management backlog-management; do
+    check "skill: ${skill}" "$([ -f "${SKILLS_DIR}/${skill}/SKILL.md" ] && echo ok || echo "missing ${SKILLS_DIR}/${skill}/SKILL.md")"
+done
+
+# SOUL.md integrity
+SOUL_FILE="${HOME}/hermes-cfo/dotfiles/SOUL.md"
+soul_lines=$(wc -l < "${SOUL_FILE}" 2>/dev/null || echo "999")
+check "SOUL.md line count ≤ 120" "$([ "${soul_lines}" -le 120 ] && echo ok || echo "${soul_lines} lines — exceeds 120")"
+rule_count=0
+if grep -qE 'Rule [0-9]' "${SOUL_FILE}" 2>/dev/null; then
+    rule_count=$(grep -cE 'Rule [0-9]' "${SOUL_FILE}")
+fi
+check "SOUL.md has no numbered Rules" "$([ "${rule_count}" = "0" ] && echo ok || echo "found ${rule_count} Rule [N] references")"
+
 # tasks file
 TASKS_FILE="${HOME}/hermes-cfo/logs/tasks/tasks.json"
 check "tasks file exists" "$([ -f "${TASKS_FILE}" ] && echo ok || echo "missing ${TASKS_FILE}")"
