@@ -133,6 +133,13 @@ class RunPipelineTests(unittest.TestCase):
             log_text = "\n".join(logs)
             self.assertIn("KNOWLEDGE_INDEXED document_id=", log_text)
             self.assertIn("source=", log_text)
+            intake_log = root / "state" / "logs" / "intake.jsonl"
+            self.assertTrue(intake_log.exists())
+            entries = [json.loads(line) for line in intake_log.read_text(encoding="utf-8").splitlines()]
+            self.assertTrue(entries)
+            self.assertEqual({entry["stage"] for entry in entries}, {"manifest", "extract", "chunk", "index", "finalize"})
+            self.assertTrue(all(entry["status"] == "completed" for entry in entries))
+            self.assertTrue(all("document_id" in entry and "title" in entry for entry in entries))
             self.assertIn("RESULT indexed=2 failures=0 skipped=0", "\n".join(logs))
 
     def test_run_pipeline_moves_failed_pdf_and_continues_batch(self) -> None:
@@ -169,6 +176,11 @@ class RunPipelineTests(unittest.TestCase):
             self.assertEqual(len(runner_calls), 1)
             self.assertTrue((root / "intake" / "failed" / "bad.pdf").exists())
             self.assertTrue((root / "raw" / "pdfs" / "good.pdf").exists())
+            intake_log = root / "state" / "logs" / "intake.jsonl"
+            entries = [json.loads(line) for line in intake_log.read_text(encoding="utf-8").splitlines()]
+            failed_extract = [entry for entry in entries if entry["stage"] == "extract" and entry["status"] == "failed"]
+            self.assertEqual(len(failed_extract), 1)
+            self.assertEqual(failed_extract[0]["error"], "pdftotext failed")
             self.assertIn("FAILED title=bad step=extraction error=pdftotext failed", "\n".join(logs))
 
     def test_run_pipeline_fails_batch_when_chunk_file_missing(self) -> None:

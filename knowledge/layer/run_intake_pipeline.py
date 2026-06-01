@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import time
@@ -29,6 +30,35 @@ Emit = Callable[[str], None]
 
 def load_pipeline_config() -> dict:
     return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def log_stage(
+    logs_path: Path,
+    document_id: str,
+    title: str,
+    stage: str,
+    status: str,
+    started_at: str,
+    finished_at: str,
+    elapsed_seconds: float,
+    *,
+    chunk_count: int = 0,
+    error: str | None = None,
+) -> None:
+    logs_path.parent.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "document_id": document_id,
+        "title": title,
+        "stage": stage,
+        "status": status,
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "elapsed_seconds": round(elapsed_seconds, 2),
+        "chunk_count": chunk_count,
+        "error": error,
+    }
+    with logs_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry) + "\n")
 
 
 def discover_inbox_pdfs(root: Path, specific_pdf: Path | None = None) -> list[Path]:
@@ -199,6 +229,8 @@ def run_pipeline(
     config = load_pipeline_config()
     chunk_size = int(config["retrieval"]["chunk_size_chars"])
     overlap = int(config["retrieval"]["chunk_overlap_chars"])
+    logs_path = root / "state" / "logs" / "intake.jsonl"
+    logs_path.parent.mkdir(parents=True, exist_ok=True)
     pdfs = discover_inbox_pdfs(root, pdf_path)
 
     if not pdfs:
@@ -214,8 +246,21 @@ def run_pipeline(
         title = current_pdf.stem
         started = timer()
         emit(f"[STEP 1/6] manifest title={title}")
+        manifest_started_at = now_iso()
+        manifest_started = timer()
         manifest_path, manifest, duplicate = ensure_manifest(root, current_pdf)
         title = manifest.get("title", title)
+        document_id = manifest_path.stem
+        log_stage(
+            logs_path,
+            document_id,
+            title,
+            "manifest",
+            "completed",
+            manifest_started_at,
+            now_iso(),
+            timer() - manifest_started,
+        )
 
         if duplicate:
             destination = quarantine_pdf(
@@ -239,20 +284,67 @@ def run_pipeline(
             continue
 
         emit(f"[STEP 2/6] extract title={title}")
+        extract_started_at = now_iso()
+        extract_started = timer()
         extracted, extract_error = extractor(root, manifest_path, current_pdf)
         if not extracted:
+            log_stage(
+                logs_path,
+                document_id,
+                title,
+                "extract",
+                "failed",
+                extract_started_at,
+                now_iso(),
+                timer() - extract_started,
+                error=extract_error or "extract failed",
+            )
             destination = quarantine_pdf(root, current_pdf, manifest_path, "extraction", extract_error or "extract failed")
             emit(f"FAILED title={title} step=extraction error={extract_error or 'extract failed'} path={destination.relative_to(root)}")
             failed += 1
             continue
+        log_stage(
+            logs_path,
+            document_id,
+            title,
+            "extract",
+            "completed",
+            extract_started_at,
+            now_iso(),
+            timer() - extract_started,
+        )
 
         emit(f"[STEP 3/6] chunk title={title}")
+        chunk_started_at = now_iso()
+        chunk_started = timer()
         chunk_count, chunk_error = chunker(root, manifest_path, chunk_size, overlap)
         if chunk_error:
+            log_stage(
+                logs_path,
+                document_id,
+                title,
+                "chunk",
+                "failed",
+                chunk_started_at,
+                now_iso(),
+                timer() - chunk_started,
+                error=chunk_error,
+            )
             destination = quarantine_pdf(root, current_pdf, manifest_path, "chunking", chunk_error)
             emit(f"FAILED title={title} step=chunking error={chunk_error} path={destination.relative_to(root)}")
             failed += 1
             continue
+        log_stage(
+            logs_path,
+            document_id,
+            title,
+            "chunk",
+            "completed",
+            chunk_started_at,
+            now_iso(),
+            timer() - chunk_started,
+            chunk_count=chunk_count,
+        )
 
         pending_finalize.append((current_pdf, manifest_path, started))
         emit(f"[STEP 4/6] index queued title={title} chunks={chunk_count}")
@@ -263,6 +355,8 @@ def run_pipeline(
 
     if pending_finalize:
         emit(f"[STEP 4/6] build_lancedb_index count={len(pending_finalize)}")
+        index_started_at = now_iso()
+        index_started = timer()
         try:
             chunk_files = batch_chunk_files([manifest_path for _, manifest_path, _ in pending_finalize])
         except ValueError as error:
@@ -271,26 +365,80 @@ def run_pipeline(
         else:
             indexed, index_message = run_index_build(root, runner, chunk_files, device="cpu")
         emit(index_message)
+        index_finished_at = now_iso()
+        index_elapsed = timer() - index_started
         if not indexed:
             for current_pdf, manifest_path, _ in pending_finalize:
-                title = load_manifest(manifest_path).get("title", current_pdf.stem)
+                manifest = load_manifest(manifest_path)
+                title = manifest.get("title", current_pdf.stem)
+                log_stage(
+                    logs_path,
+                    manifest_path.stem,
+                    title,
+                    "index",
+                    "failed",
+                    index_started_at,
+                    index_finished_at,
+                    index_elapsed,
+                    chunk_count=int(manifest.get("chunk_count", 0) or 0),
+                    error=index_message,
+                )
                 destination = quarantine_pdf(root, current_pdf, manifest_path, "indexing", index_message)
                 emit(f"FAILED title={title} step=indexing error={index_message} path={destination.relative_to(root)}")
                 failed += 1
             pending_finalize = []
+        else:
+            for current_pdf, manifest_path, _ in pending_finalize:
+                manifest = load_manifest(manifest_path)
+                title = manifest.get("title", current_pdf.stem)
+                log_stage(
+                    logs_path,
+                    manifest_path.stem,
+                    title,
+                    "index",
+                    "completed",
+                    index_started_at,
+                    index_finished_at,
+                    index_elapsed,
+                    chunk_count=int(manifest.get("chunk_count", 0) or 0),
+                )
 
     for current_pdf, manifest_path, started in pending_finalize:
         title = load_manifest(manifest_path).get("title", current_pdf.stem)
         emit(f"[STEP 5/6] finalize title={title}")
+        finalize_started_at = now_iso()
+        finalize_started = timer()
         finalized, finalize_message = finalizer(root, current_pdf, manifest_path)
         emit(finalize_message)
         if not finalized:
+            log_stage(
+                logs_path,
+                manifest_path.stem,
+                title,
+                "finalize",
+                "failed",
+                finalize_started_at,
+                now_iso(),
+                timer() - finalize_started,
+                error=finalize_message,
+            )
             destination = quarantine_pdf(root, current_pdf, manifest_path, "finalize", finalize_message)
             emit(f"FAILED title={title} step=finalize error={finalize_message} path={destination.relative_to(root)}")
             failed += 1
             continue
 
         finalized_manifest = load_manifest(manifest_path)
+        log_stage(
+            logs_path,
+            manifest_path.stem,
+            title,
+            "finalize",
+            "completed",
+            finalize_started_at,
+            now_iso(),
+            timer() - finalize_started,
+            chunk_count=int(finalized_manifest.get("chunk_count", 0) or 0),
+        )
         elapsed = timer() - started
         emit(f"[STEP 6/6] indexed title={title}")
         emit(
