@@ -18,9 +18,9 @@ TABLE_NAME = "library_chunks"
 
 
 class Embedder:
-    def __init__(self, model_name: str, cache_dir: Path) -> None:
+    def __init__(self, model_name: str, cache_dir: Path, device: str) -> None:
         cache_dir.mkdir(parents=True, exist_ok=True)
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             trust_remote_code=True,
@@ -60,21 +60,77 @@ class Embedder:
         return vectors
 
 
-def load_chunk_records(root: Path) -> list[dict]:
+def resolve_device(device: str) -> str:
+    if device == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    if device == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA requested but not available")
+    return device
+
+
+def load_chunk_records(root: Path, chunk_files: list[Path] | None = None) -> list[dict]:
     records: list[dict] = []
-    for chunk_file in sorted((root / "processed" / "chunks").glob("*.jsonl")):
+    files = chunk_files or sorted((root / "processed" / "chunks").glob("*.jsonl"))
+    for chunk_file in files:
         records.extend(iter_jsonl(chunk_file))
     return records
+
+
+def document_ids_for_chunk_files(chunk_files: list[Path] | None) -> set[str]:
+    if not chunk_files:
+        return set()
+    return {chunk_file.stem for chunk_file in chunk_files}
+
+
+def write_records(db: lancedb.DBConnection, records: list[dict], *, overwrite: bool, document_ids: set[str]) -> None:
+    if overwrite:
+        db.create_table(TABLE_NAME, data=records, mode="overwrite")
+        return
+
+    if TABLE_NAME in db.table_names():
+        table = db.open_table(TABLE_NAME)
+        if document_ids:
+            quoted = ", ".join("'" + document_id.replace("'", "''") + "'" for document_id in sorted(document_ids))
+            table.delete(f"document_id IN ({quoted})")
+        table.add(records, mode="append")
+        return
+
+    db.create_table(TABLE_NAME, data=records, mode="create")
+
+
+def update_manifests(root: Path, document_ids: set[str]) -> None:
+    manifest_dir = root / "state" / "manifests"
+    for manifest_path in sorted(manifest_dir.glob("*.json")):
+        if document_ids and manifest_path.stem not in document_ids:
+            continue
+        manifest = load_manifest(manifest_path)
+        manifest["index_status"] = "completed"
+        manifest["indexed_at"] = now_iso()
+        manifest["index_table"] = TABLE_NAME
+        save_manifest(manifest_path, manifest)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build LanceDB index for HVE library chunks.")
     parser.add_argument("--root", required=True, help="Knowledge-layer root path")
     parser.add_argument("--limit", type=int, default=0, help="Optional chunk limit")
+    parser.add_argument(
+        "--chunk-file",
+        action="append",
+        default=[],
+        help="Specific chunk JSONL file to index; repeat to limit indexing to a batch",
+    )
+    parser.add_argument(
+        "--device",
+        choices=("auto", "cpu", "cuda"),
+        default="auto",
+        help="Embedding device selection",
+    )
     args = parser.parse_args()
 
     root = Path(args.root)
-    records = load_chunk_records(root)
+    chunk_files = [Path(value) for value in args.chunk_file]
+    records = load_chunk_records(root, chunk_files or None)
     if args.limit:
         records = records[: args.limit]
     if not records:
@@ -82,23 +138,21 @@ def main() -> int:
         return 0
 
     model_cache = root / "state" / "model-cache"
-    embedder = Embedder(MODEL_NAME, model_cache)
+    resolved_device = resolve_device(args.device)
+    embedder = Embedder(MODEL_NAME, model_cache, resolved_device)
     embeddings = embedder.encode([record["text"] for record in records], "search_document")
     for record, vector in zip(records, embeddings):
         record["vector"] = vector
 
     db = lancedb.connect(str(root / "index" / "lancedb"))
-    db.create_table(TABLE_NAME, data=records, mode="overwrite")
+    document_ids = document_ids_for_chunk_files(chunk_files or None)
+    write_records(db, records, overwrite=not chunk_files, document_ids=document_ids)
+    update_manifests(root, document_ids)
 
-    manifest_dir = root / "state" / "manifests"
-    for manifest_path in sorted(manifest_dir.glob("*.json")):
-        manifest = load_manifest(manifest_path)
-        manifest["index_status"] = "completed"
-        manifest["indexed_at"] = now_iso()
-        manifest["index_table"] = TABLE_NAME
-        save_manifest(manifest_path, manifest)
-
-    print(f"PASS records={len(records)} table={TABLE_NAME} root={root}")
+    print(
+        f"PASS records={len(records)} table={TABLE_NAME} root={root} "
+        f"device={resolved_device} mode={'overwrite' if not chunk_files else 'append'}"
+    )
     return 0
 
 
