@@ -1,0 +1,9 @@
+[Unit]
+Description=HVE Intake Pipeline — Index new PDFs into LanceDB
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/hans/hermes-cfo
+ExecStart=/home/hans/.hve-knowledge/venv/bin/python3 knowledge/layer/run_intake_pipeline.py
+StandardOutput=journal
+StandardError=journal
