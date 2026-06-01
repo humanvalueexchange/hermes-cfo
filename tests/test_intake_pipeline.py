@@ -130,6 +130,9 @@ class RunPipelineTests(unittest.TestCase):
             self.assertTrue(all(path.endswith(".jsonl") for path in chunk_args))
             self.assertTrue((root / "raw" / "pdfs" / "alpha.pdf").exists())
             self.assertTrue((root / "raw" / "pdfs" / "beta.pdf").exists())
+            log_text = "\n".join(logs)
+            self.assertIn("KNOWLEDGE_INDEXED document_id=", log_text)
+            self.assertIn("source=", log_text)
             self.assertIn("RESULT indexed=2 failures=0 skipped=0", "\n".join(logs))
 
     def test_run_pipeline_moves_failed_pdf_and_continues_batch(self) -> None:

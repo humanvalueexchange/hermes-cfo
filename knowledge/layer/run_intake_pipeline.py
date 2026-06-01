@@ -294,8 +294,9 @@ def run_pipeline(
         elapsed = timer() - started
         emit(f"[STEP 6/6] indexed title={title}")
         emit(
-            f"INDEXED title={title} chunks={finalized_manifest.get('chunk_count', 0)} "
-            f"elapsed={elapsed:.2f}s"
+            f"KNOWLEDGE_INDEXED document_id={manifest_path.stem} title={title} "
+            f"chunks={finalized_manifest.get('chunk_count', 0)} "
+            f"elapsed={elapsed:.2f}s source={finalized_manifest.get('source_path', '')}"
         )
 
     total_elapsed = timer() - batch_start

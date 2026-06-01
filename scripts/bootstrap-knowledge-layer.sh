@@ -134,8 +134,8 @@ Enable/verify the intake watcher:
   systemctl --user status hve-intake.path
 EOF
 
-if [[ -x "${REPO_DIR}/scripts/validate-knowledge-layer.sh" ]]; then
-  bash "${REPO_DIR}/scripts/validate-knowledge-layer.sh"
+if [[ -x "${REPO_DIR}/scripts/validate-knowledge-intake.sh" ]]; then
+  bash "${REPO_DIR}/scripts/validate-knowledge-intake.sh" --root "${KNOWLEDGE_ROOT}"
 else
-  echo "WARN validate-knowledge-layer.sh not present in this checkout — skipping validation hook"
+  echo "WARN validate-knowledge-intake.sh not present in this checkout — skipping validation hook"
 fi
