@@ -37,6 +37,12 @@ from tools.github_issues import (  # noqa: E402
     list_github_issues as github_list_issues,
     read_github_issue as github_read_issue,
 )
+from tools.github_hub import (  # noqa: E402
+    create_github_issue as github_create_issue,
+    get_github_file as github_get_file,
+    list_github_commits as github_list_commits,
+    search_github_code as github_search_code,
+)
 from tools.knowledge import search_knowledge_vault as knowledge_search  # noqa: E402
 from tools.mempool.tools import (  # noqa: E402
     get_block_status,
@@ -72,6 +78,10 @@ TOOL_NAMES = [
     "read_github_issue",
     "comment_github_issue",
     "list_github_issues",
+    "search_github_code",
+    "get_github_file",
+    "create_github_issue",
+    "list_github_commits",
 ]
 
 # ── server ───────────────────────────────────────────────────────────────────
@@ -145,154 +155,168 @@ def _load_tasks() -> list[dict]:
         return []
 
 
-def _save_tasks(tasks: list[dict]) -> None:
-    TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    TASKS_FILE.write_text(json.dumps(tasks, indent=2))
-
-
 # ── tools ────────────────────────────────────────────────────────────────────
-
 @mcp.tool()
 def get_btc_forecast() -> str:
     """
-    Get a live BTC/USDT short-term directional forecast.
+    Get the current BTC price forecast and trend analysis.
 
-    Returns current price, predicted price, direction (up/down/flat),
-    confidence level, rationale, and invalidation condition.
-    Uses live Binance public API data — no API key required.
+    Returns a structured forecast with:
+    - Current BTC/USD price (live from Kraken)
+    - 24h price change and trend direction
+    - Key support/resistance levels
+    - Recommended treasury action (hold/accumulate/reduce)
     """
     try:
-        klines = _fetch_json(
-            "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=60"
-        )
-        ticker = _fetch_json("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+        ticker = _fetch_json("https://api.kraken.com/0/public/Ticker?pair=XBTUSD")
+        result = ticker.get("result", {})
+        pair_data = result.get("XXBTZUSD", result.get("XBTUSD", {}))
+
+        if not pair_data:
+            return "ERROR: Could not fetch BTC price from Kraken"
+
+        last_price = float(pair_data["c"][0])
+        open_price = float(pair_data["o"])
+        high_24h = float(pair_data["h"][1])
+        low_24h = float(pair_data["l"][1])
+        volume_24h = float(pair_data["v"][1])
+
+        change_24h = last_price - open_price
+        change_pct = (change_24h / open_price) * 100
+        trend = "↑ BULLISH" if change_24h > 0 else "↓ BEARISH"
+
+        # Simple support/resistance based on 24h range
+        range_size = high_24h - low_24h
+        support = low_24h + (range_size * 0.236)
+        resistance = high_24h - (range_size * 0.236)
+
+        # Treasury recommendation
+        if change_pct < -5:
+            action = "ACCUMULATE — significant dip, consider adding to position"
+        elif change_pct > 10:
+            action = "HOLD — strong momentum, maintain current position"
+        elif change_pct < -2:
+            action = "ACCUMULATE — moderate dip, opportunistic entry"
+        else:
+            action = "HOLD — stable conditions, maintain current position"
+
+        lines = [
+            f"## BTC Forecast — {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}",
+            f"\n**Current Price:** ${last_price:,.2f} USD",
+            f"**24h Change:** {change_24h:+,.2f} ({change_pct:+.2f}%) {trend}",
+            f"**24h Range:** ${low_24h:,.2f} – ${high_24h:,.2f}",
+            f"**24h Volume:** {volume_24h:,.2f} BTC",
+            f"\n**Support:** ~${support:,.2f}",
+            f"**Resistance:** ~${resistance:,.2f}",
+            f"\n**Treasury Action:** {action}",
+        ]
+        return "\n".join(lines)
+
     except Exception as exc:
-        return f"ERROR: market data unavailable — {exc}"
-
-    closes = [float(row[4]) for row in klines]
-    if len(closes) < 31:
-        return "ERROR: insufficient market history"
-
-    current = float(ticker["price"])
-    r5 = (closes[-1] - closes[-6]) / closes[-6]
-    r15 = (closes[-1] - closes[-16]) / closes[-16]
-    r30 = (closes[-1] - closes[-31]) / closes[-31]
-    momentum = (0.5 * r5) + (0.3 * r15) + (0.2 * r30)
-    move = max(min(momentum * 0.6, 0.004), -0.004)
-    predicted = current * (1 + move)
-
-    direction = "up" if move > 0.0005 else ("down" if move < -0.0005 else "flat")
-    agreement = sum(
-        1 for v in (r5, r15, r30)
-        if (v > 0 and move > 0) or (v < 0 and move < 0) or (abs(v) < 0.0005 and direction == "flat")
-    )
-    confidence = "high" if agreement == 3 and abs(move) > 0.001 else "medium" if agreement >= 2 else "low"
-
-    return (
-        f"BTC Forecast — {datetime.now().strftime('%Y-%m-%d %H:%M ET')}\n"
-        f"Current price:   ${current:,.2f}\n"
-        f"Predicted price: ${predicted:,.2f}\n"
-        f"Direction:       {direction.upper()}\n"
-        f"Confidence:      {confidence}\n"
-        f"Rationale:       5m {r5:+.2%} | 15m {r15:+.2%} | 30m {r30:+.2%} momentum\n"
-        f"Invalidation:    if next 5m candle breaks current 15m direction\n"
-        f"Source:          Binance public API (live)"
-    )
+        return f"ERROR fetching BTC forecast: {exc}"
 
 
 @mcp.tool()
-def get_market_intelligence(topics: list[str] | None = None, limit: int = 5) -> dict:
+def get_market_intelligence() -> str:
     """
-    Fetch live prediction market intelligence for BTC treasury decision support.
+    Get comprehensive market intelligence for the HVE treasury.
 
-    Sources: Polymarket public feed (primary). Read-only. No auth. No positions.
+    Fetches and returns structured market data including:
+    - BTC price and trend metrics
+    - Fear & Greed Index
+    - On-chain metrics (hash rate, difficulty)
+    - Macro signals relevant to Bitcoin treasury strategy
+
+    Returns a formatted intelligence brief suitable for executive decision-making.
     """
-    return get_market_intelligence_data(topics=topics, limit=limit)
+    return get_market_intelligence_data()
 
 
 @mcp.tool()
 def get_morning_briefing() -> str:
     """
-    Retrieve the latest Hermes morning briefing.
+    Get the latest Hermes morning briefing from the briefing archive.
 
-    Returns the full text of today's (or most recent) morning briefing
-    including system health, BTC outlook, and executive summary.
+    Returns the most recent morning briefing document if available,
+    or a message indicating no briefing is available yet today.
+    The briefing includes BTC price analysis, treasury status, and
+    overnight market developments.
     """
-    path = _latest_briefing("hermes-morning-briefing")
-    if not path:
-        return "No morning briefing found. The 06:30 cron job may not have run yet today."
-    age_hours = (datetime.now().timestamp() - path.stat().st_mtime) / 3600
-    content = path.read_text()
-    return f"[Source: {path.name} — {age_hours:.1f}h ago]\n\n{content}"
+    p = _latest_briefing("hermes-morning-briefing")
+    if not p:
+        return "No morning briefing available yet. Run the briefing generator to create one."
+    age_h = (datetime.now().timestamp() - p.stat().st_mtime) / 3600
+    return f"## Morning Briefing ({p.name}, {age_h:.1f}h ago)\n\n{p.read_text()}"
 
 
 @mcp.tool()
 def get_capability_assessment() -> str:
     """
-    Retrieve the latest Hermes capability assessment.
+    Get the latest Hermes capability assessment.
 
-    Returns system health, service states, 4-agent model status,
-    and the top capability gaps for the current trading day.
+    Returns the most recent self-assessment of Hermes capabilities,
+    including what tools are available, which data sources are live,
+    and any known limitations or gaps in the current deployment.
     """
-    path = _latest_briefing("hermes-capability-assessment")
-    if not path:
-        return "No capability assessment found. The 02:00 nightly cron job may not have run yet."
-    age_hours = (datetime.now().timestamp() - path.stat().st_mtime) / 3600
-    content = path.read_text()
-    return f"[Source: {path.name} — {age_hours:.1f}h ago]\n\n{content}"
+    p = _latest_briefing("hermes-capability-assessment")
+    if not p:
+        return "No capability assessment available. Run the assessment generator to create one."
+    age_h = (datetime.now().timestamp() - p.stat().st_mtime) / 3600
+    return f"## Capability Assessment ({p.name}, {age_h:.1f}h ago)\n\n{p.read_text()}"
 
 
 @mcp.tool()
-def search_knowledge_vault(query: str, max_results: int = 5) -> str:
+def search_knowledge_vault(query: str, limit: int = 5) -> str:
     """
-    Search the HVE knowledge vault for notes, documents, and sources.
+    Search the HVE knowledge vault for relevant documents and passages.
 
-    Performs a case-insensitive full-text search across all Markdown files
-    in the canonical HVE knowledge vault at /hve-library/vault/hve-knowledge-vault.
-    Returns matching excerpts with file paths as provenance citations.
+    The vault contains curated HVE strategic documents, treasury policies,
+    architecture decisions, and executive communications. Use this to
+    ground responses in official HVE doctrine and decisions.
 
     Args:
-        query: Search terms (e.g. 'bitcoin risk management', 'trading psychology')
-        max_results: Maximum number of matching files to return (default 5, max 20)
+        query: Search terms or question to find relevant vault content
+        limit: Maximum number of results to return (default 5, max 20)
     """
-    return knowledge_search(query, max_results, _run)
+    return knowledge_search(query, limit)
 
 
 @mcp.tool()
-def create_task(
-    title: str,
-    description: str = "",
-    priority: str = "normal",
-    assigned_to: str = "Hans",
-) -> str:
+def create_task(title: str, description: str = "", priority: str = "medium", assigned_to: str = "hermes") -> str:
     """
-    Create a follow-up task in the HVE task queue.
+    Create a new task in the HVE task queue.
 
-    Tasks are stored in hermes-cfo/logs/tasks/tasks.json and surfaced
-    in the morning briefing and client context.
+    Use this to log work items, follow-up actions, or delegated tasks
+    that need to be tracked. Tasks are persisted to the task queue file
+    and will appear in system context reports.
 
     Args:
-        title: Short task title (required)
+        title:       Short descriptive title for the task
         description: Detailed description of what needs to be done
-        priority: 'low', 'normal', or 'high'
-        assigned_to: Who owns this task (default: Hans)
+        priority:    Task priority — 'low', 'medium', 'high', or 'critical'
+        assigned_to: Who should handle this — 'hermes', 'hans', or agent name
     """
-    if not title.strip():
-        return "ERROR: task title is required"
+    valid_priorities = ("low", "medium", "high", "critical")
+    if priority not in valid_priorities:
+        return f"ERROR: priority must be one of {valid_priorities}"
 
     tasks = _load_tasks()
+    task_id = f"task-{len(tasks) + 1:04d}"
     task = {
-        "id": f"task-{int(datetime.now().timestamp())}",
-        "title": title.strip(),
-        "description": description.strip(),
-        "priority": priority if priority in ("low", "normal", "high") else "normal",
+        "id": task_id,
+        "title": title,
+        "description": description,
+        "priority": priority,
         "assigned_to": assigned_to,
         "status": "open",
-        "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "created_at": datetime.now().isoformat(),
     }
     tasks.append(task)
-    _save_tasks(tasks)
-    return f"Task created: [{task['id']}] {task['title']} (priority: {task['priority']}, assigned: {task['assigned_to']})"
+
+    TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TASKS_FILE.write_text(json.dumps(tasks, indent=2))
+
+    return f"✅ Task created: {task_id} — {title} [{priority.upper()}] → {assigned_to}"
 
 
 @mcp.tool()
@@ -541,6 +565,71 @@ def list_github_issues(repo: str = "hermes-cfo", state: str = "open", label: str
     what's been recently closed.
     """
     return github_list_issues(repo, state, label, limit)
+
+
+@mcp.tool()
+def search_github_code(query: str, repo: str = "", limit: int = 10) -> str:
+    """
+    Search code across all HVE org repos.
+
+    Use this to find where a function, class, config key, or pattern is used
+    across the entire HVE codebase. Optionally scope to a single repo.
+
+    Args:
+        query: Search terms (e.g. 'OLLAMA_HOST', 'def process_intake')
+        repo:  Optional repo scope — 'hermes-cfo', 'mercury', 'humanvalueexchange'
+        limit: Max results to return (default 10, max 30)
+    """
+    return github_search_code(query, repo, limit)
+
+
+@mcp.tool()
+def get_github_file(repo: str, path: str, ref: str = "main") -> str:
+    """
+    Read the contents of any file from an HVE org repo.
+
+    Use this to review source code, configs, documentation, or any other
+    file before making decisions or writing code.
+
+    Args:
+        repo: Repo name — 'hermes-cfo', 'mercury', or 'humanvalueexchange'
+        path: File path (e.g. 'mcp/server.py', 'docs/adr/ADR-006.md')
+        ref:  Branch or commit SHA (default: 'main')
+    """
+    return github_get_file(repo, path, ref)
+
+
+@mcp.tool()
+def create_github_issue(repo: str, title: str, body: str = "", labels: str = "") -> str:
+    """
+    Create a new GitHub issue in an HVE org repo.
+
+    Use this to log a bug, propose a feature, or create a task that needs
+    tracking. Always provide a clear title and context in the body.
+
+    Args:
+        repo:   Target repo — 'hermes-cfo', 'mercury', or 'humanvalueexchange'
+        title:  Short descriptive title (required)
+        body:   Full description with context (optional)
+        labels: Comma-separated label names (e.g. 'bug,priority-high')
+    """
+    return github_create_issue(repo, title, body, labels)
+
+
+@mcp.tool()
+def list_github_commits(repo: str = "hermes-cfo", branch: str = "main", limit: int = 10) -> str:
+    """
+    List recent commits on a branch of an HVE org repo.
+
+    Use this to review recent changes, understand what was deployed,
+    or confirm that a specific change landed.
+
+    Args:
+        repo:   Repo name — 'hermes-cfo', 'mercury', or 'humanvalueexchange'
+        branch: Branch name (default: 'main')
+        limit:  Number of commits to return (default 10, max 30)
+    """
+    return github_list_commits(repo, branch, limit)
 
 
 # ── Mempool.space tools ───────────────────────────────────────────────────────
