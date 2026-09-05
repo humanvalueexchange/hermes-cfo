@@ -10,15 +10,19 @@ knowledge work, memory, research, coding, and approved system automation.
 ## Model stack
 
 - `qwen3.8-hermes:27b-128k`: Hermes primary
-- `qwen3.8-distill-2b:q4_k_m`: Honcho deriver and summaries
+- `qwen3.8-distill-2b:q4_k_m`: auxiliary derivation, extraction, triage,
+  decomposition, summaries, title generation, and bounded utility work
 - `nomic-embed-text:latest`: embeddings
 
 All three are preloaded through `hermes-model-preload.service` with
 `keep_alive=-1`. Qwen3.5 and GPT-OSS remain installed only as fallback models.
+The 2B model is not a memory backend. Durable memory uses the local
+SQLite/FTS5 memory plugin; embeddings use `nomic-embed-text`.
 
 ## WhatsApp capabilities
 
-The allowlisted Hans DM has browser/web, vision, file, skills, Honcho memory,
+The allowlisted Hans DM has browser/web, vision, file, skills, local SQLite
+memory,
 session search, terminal, code execution, delegation, coder dispatch, cron,
 todo, computer use, image generation, BFL, TTS, and clarification capabilities.
 

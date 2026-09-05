@@ -80,12 +80,14 @@ These tools can change files or system state. Use them only for trusted users,
 keep command allowlists narrow, and preserve the security settings unless
 there is a documented reason to change them.
 
-### `memory` and `honcho`
+### `memory` and the auxiliary 2B model
 
 `memory` controls durable user memory, profile information, and memory size
-limits. The configured provider is Honcho. Memory helps Hermes retain useful
-context without carrying an unlimited conversation transcript into every
-request.
+limits. The configured provider is `local-sqlite-memory`, backed by local
+SQLite/FTS5. The `qwen3.8-distill-2b:q4_k_m` model is separate: it performs
+bounded extraction, triage, task decomposition, summaries, title generation,
+and other lightweight utility work. It is not required for SQLite persistence
+or retrieval.
 
 ### `mcp_servers`
 

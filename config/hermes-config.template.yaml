@@ -258,7 +258,6 @@ file_read_max_chars: 100000
 goals:
   max_turns: 20
 group_sessions_per_user: true
-honcho: {}
 hooks:
   pre_llm_call:
   - command: ~/.hermes/agent-hooks/inject-market-data.sh

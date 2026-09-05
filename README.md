@@ -17,7 +17,7 @@ Ollama is the local model runtime. The approved hot set on the DGX Spark is:
 |---|---|---:|
 | Primary Hermes reasoning and orchestration | `qwen3.8-hermes:27b-128k` | 65,536 |
 | Coding and fallback reasoning | `qwen3.8-hermes:27b-128k` | 131,072 |
-| Lightweight derivation and utility work | `qwen3.8-distill-2b:q4_k_m` | 32,768 |
+| Auxiliary derivation, extraction, triage, decomposition, and summaries | `qwen3.8-distill-2b:q4_k_m` | 32,768 |
 | Embeddings | `nomic-embed-text:latest` (`nomic-embed-text-v1.5` contract) | 768 |
 
 The models are served locally through Ollama with persistent keep-alive
@@ -68,10 +68,12 @@ scripts/hermes-runtime-drift.sh
 The drift check compares the live profile, hooks, managed user units,
 environment contract, service state, both Hermes profiles, scheduled jobs,
 warmup scripts, required Ollama models, and their live contexts with this
-checkout. `config/llm-stack.yaml` is the canonical model contract; any model
-or context change must update it first and then pass. Honcho's live dialectic
-levels are separately pinned to `qwen3.8-hermes:27b-128k`; its deriver and
-summary paths remain on `qwen3.8-distill-2b:q4_k_m`.
+checkout. `config/llm-stack.yaml` is the canonical model contract; any model or context
+change must update it first and then pass. The 2B model is an auxiliary
+deriver, not a memory backend. It handles bounded extraction, title generation,
+skills support, triage, task decomposition, summaries, and lightweight
+calculations. Durable memory is provided by the local SQLite/FTS5 plugin, and
+embeddings are provided by `nomic-embed-text`.
 
 ## Knowledge intake
 
@@ -86,9 +88,9 @@ deliberately stricter than checking `ollama list`: residency and the actual
 runtime context reported by `ollama ps` are what protect the three-model hot
 policy from accidental eviction.
 
-Honcho is the durable Hermes knowledge and memory layer. Telegram is reserved
-for link/PDF ingestion, while WhatsApp is the primary human-facing channel for
-Hermes communications and scheduled briefings.text
+Local SQLite/FTS5 is the durable Hermes memory layer. Telegram is reserved for
+link/PDF ingestion, while WhatsApp is the primary human-facing channel for
+Hermes communications and scheduled briefings.
 Telegram link/PDF
         |
         v
@@ -142,9 +144,9 @@ The durable knowledge root is `/hve-library`:
 | `index/lancedb` | Semantic retrieval index |
 | `vault/hve-knowledge-vault` | Human-facing Obsidian vault |
 
-Honcho remains appropriate for conversational and episodic context. The
-library, manifests, LanceDB, and Obsidian vault provide durable evidence and
-human-auditable knowledge.
+The local SQLite memory plugin provides conversational and episodic memory.
+The library, manifests, LanceDB, and Obsidian vault provide durable evidence
+and human-auditable knowledge.
 
 ## Repository structure
 

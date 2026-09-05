@@ -42,7 +42,7 @@ resident:
     context: 32768
     ollama_num_ctx: 32768
     keep_alive: -1
-    purpose: lightweight derivation and utility work
+    purpose: auxiliary derivation, extraction, triage, decomposition, summaries, and bounded calculations
   embedding:
     model: nomic-embed-text
     context: 2048
