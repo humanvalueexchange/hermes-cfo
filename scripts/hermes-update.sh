@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # hermes-update.sh — Daily Hermes agent version check and upgrade
 #
-# Ownership: Hermes (CFO AI) runs this daily at 03:00 via cron.
-# Notify: Hans via Telegram if update available.
-# Auto-upgrade: YES (with Telegram notification before + after).
+# Ownership: Hermes (Chief of Staff) runs this daily at 03:00 via cron.
+# Notify: Hans via WhatsApp if an update is available.
+# Auto-upgrade: YES (with WhatsApp notification before + after).
 # Manual run: bash scripts/hermes-update.sh
 #
 # Design principle: Hermes should never be more than 1 week behind upstream.
@@ -64,16 +64,16 @@ fi
 
 log "Update available: $INSTALLED → $LATEST (released $LATEST_DATE, ${DAYS_BEHIND}d ago)"
 
-# ── 4. Notify Hermes via Telegram if update available ────────────────────────
+# ── 4. Notify Hermes via WhatsApp if update available ─────────────────────────
 # Find gateway notification script or use hermes CLI
-notify_telegram() {
+notify_whatsapp() {
   local msg="$1"
-  # Use hermes MCP or direct Telegram API if configured
+  # Use the local notification queue consumed by the active WhatsApp gateway.
   if [ -f ~/.hermes-mcp.env ]; then
     source ~/.hermes-mcp.env 2>/dev/null || true
   fi
-  # Log the notification (gateway picks up and routes to Telegram)
-  log "TELEGRAM_NOTIFY: $msg"
+  # Log the notification for the WhatsApp-facing gateway.
+  log "WHATSAPP_NOTIFY: $msg"
   # Write to hermes notification queue if available
   if [ -d ~/.hermes/notifications ]; then
     echo "$msg" > ~/.hermes/notifications/update-$(date +%s).txt
@@ -83,7 +83,7 @@ notify_telegram() {
 # ── 5. Decide: warn or auto-upgrade ──────────────────────────────────────────
 if [ "$DAYS_BEHIND" -lt "$NOTIFY_DAYS_WARN" ]; then
   # Fresh release — notify only, let team review release notes first
-  notify_telegram "📦 Hermes update available: v$INSTALLED → v$LATEST (released $LATEST_DATE). Review release notes before upgrading. Run: bash ~/hanshermesagent/scripts/hermes-update.sh --upgrade"
+  notify_whatsapp "📦 Hermes update available: v$INSTALLED → v$LATEST (released $LATEST_DATE). Review release notes before upgrading. Run: bash ~/hanshermesagent/scripts/hermes-update.sh --upgrade"
   log "Notified — within $NOTIFY_DAYS_WARN day review window, not auto-upgrading"
   exit 0
 fi
@@ -91,14 +91,14 @@ fi
 # Auto-upgrade path (>= NOTIFY_DAYS_WARN days behind, or --upgrade flag)
 FORCE_UPGRADE="${1:-}"
 if [ "$DAYS_BEHIND" -lt "$NOTIFY_DAYS_AUTO" ] && [ "$FORCE_UPGRADE" != "--upgrade" ]; then
-  notify_telegram "📦 Hermes update: v$INSTALLED → v$LATEST is ${DAYS_BEHIND}d old. Auto-upgrade in $((NOTIFY_DAYS_AUTO - DAYS_BEHIND))d or run: bash ~/hanshermesagent/scripts/hermes-update.sh --upgrade"
+  notify_whatsapp "📦 Hermes update: v$INSTALLED → v$LATEST is ${DAYS_BEHIND}d old. Auto-upgrade in $((NOTIFY_DAYS_AUTO - DAYS_BEHIND))d or run: bash ~/hanshermesagent/scripts/hermes-update.sh --upgrade"
   log "Notified — not yet at auto-upgrade threshold ($NOTIFY_DAYS_AUTO days)"
   exit 0
 fi
 
 # ── 6. Perform upgrade ────────────────────────────────────────────────────────
 log "Starting upgrade: $INSTALLED → $LATEST"
-notify_telegram "🔄 Hermes self-upgrading: v$INSTALLED → v$LATEST. Gateway will restart in ~60s."
+notify_whatsapp "🔄 Hermes self-upgrading: v$INSTALLED → v$LATEST. Gateway will restart in ~60s."
 
 # Stop gateway
 systemctl --user stop hermes-gateway.service 2>/dev/null || true
@@ -150,10 +150,10 @@ systemctl --user start hermes-gateway.service
 sleep 3
 if systemctl --user is-active --quiet hermes-gateway.service; then
   log "Gateway restarted ✅"
-  notify_telegram "✅ Hermes upgraded to v$NEW_VERSION. Gateway running. Run test-tool-enforcement.sh to validate."
+  notify_whatsapp "✅ Hermes upgraded to v$NEW_VERSION. Gateway running. Run test-tool-enforcement.sh to validate."
 else
   log "ERROR: Gateway failed to start after upgrade"
-  notify_telegram "❌ Hermes upgrade to v$NEW_VERSION — GATEWAY FAILED TO START. Manual intervention needed."
+  notify_whatsapp "❌ Hermes upgrade to v$NEW_VERSION — GATEWAY FAILED TO START. Manual intervention needed."
   exit 1
 fi
 

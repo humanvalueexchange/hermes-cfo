@@ -2,7 +2,7 @@
 
 ## What this repo contains
 
-This repository holds **configuration templates, scripts, agent definitions, and documentation** for the Hermes CFO system. It is a **public repo** hosted under the `humanvalueexchange` GitHub org.
+This repository holds **configuration templates, scripts, agent definitions, and documentation** for the Hermes Chief of Staff system. Financial and trading runtime is maintained separately in `humanvalueexchange/hve-cfo`.
 
 **No live secrets should ever be committed here.**
 
@@ -52,6 +52,6 @@ This repository holds **configuration templates, scripts, agent definitions, and
 
 This is an internal company repo. Report security issues directly to:
 
-**Hans Westphal (CEO)** — via WhatsApp direct message or Telegram.
+**Hans Westphal (CEO)** — via the active WhatsApp profile or a secure direct channel.
 
 Do not open a public GitHub issue for active security vulnerabilities.

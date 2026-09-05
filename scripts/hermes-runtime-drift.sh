@@ -189,10 +189,7 @@ compare_file() {
 }
 
 compare_file "$REPO_ROOT/dotfiles/SOUL.md" "$PROFILE/SOUL.md"
-compare_file "$REPO_ROOT/dotfiles/inject-market-data.sh" "$HOME/.hermes/agent-hooks/inject-market-data.sh"
-
 declare -a managed_units=(
-  hermes-mcp.service
   hermes-model-preload.service
   hve-intake.service
   hve-intake.path
@@ -202,14 +199,11 @@ for unit in "${managed_units[@]}"; do
 done
 
 if systemctl --user daemon-reload >/dev/null 2>&1; then
-  for unit in hermes-mcp.service hermes-model-preload.service hve-intake.path; do
+  for unit in hermes-model-preload.service hve-intake.path; do
     systemctl --user is-enabled "$unit" >/dev/null 2>&1 \
       && pass "$unit is enabled" \
       || warn "$unit is not enabled"
   done
-  systemctl --user is-active hermes-mcp.service >/dev/null 2>&1 \
-    && pass "hermes-mcp.service is active" \
-    || fail "hermes-mcp.service is not active"
 else
   fail "user systemd is unavailable"
 fi

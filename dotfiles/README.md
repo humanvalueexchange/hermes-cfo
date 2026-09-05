@@ -13,14 +13,8 @@ These files are **templates and live copies** — the authoritative source of tr
 |---|---|---|
 | `SOUL.md` | active Hermes profile `SOUL.md` | Hermes identity. Reloaded on every message — no restart needed after deploy. |
 | `hermes-env.template` | `~/.hermes/.env` *(manual fill)* | Template only — never contains real secrets. Fill in secrets manually after fresh restore. |
-| `inject-market-data.sh` | `~/.hermes/agent-hooks/inject-market-data.sh` | Market data hook injected into every Hermes request. |
 | `hermes-model-preload.service` | `~/.config/systemd/user/hermes-model-preload.service` | Loads all 3 Platonic stack models on boot. |
-| `hermes-gateway.service` | `~/.config/systemd/user/hermes-gateway.service` | Hermes Telegram gateway (main entry point). |
-| `hermes-mcp.service` | `~/.config/systemd/user/hermes-mcp.service` | Hermes MCP tool server. |
-| `hermes-data-refresh.service` | `/etc/systemd/system/hermes-data-refresh.service` | Nightly market data refresh (**system** unit, `User=hans`). |
-| `hermes-data-refresh.timer` | `/etc/systemd/system/hermes-data-refresh.timer` | Systemd timer for data refresh (**system** unit, `WantedBy=timers.target`). |
-| `hermes-freqtrade.service` | `~/.config/systemd/user/hermes-freqtrade.service` | Freqtrade integration service. |
-| `hermes-telegram-log.service` | `~/.config/systemd/user/hermes-telegram-log.service` | Telegram audit log service. |
+| `hermes-gateway.service` | `~/.config/systemd/user/hermes-gateway-hanshermesagent.service` | Hermes WhatsApp gateway (main entry point). |
 
 ---
 
@@ -47,19 +41,9 @@ cd ~/hanshermesagent && bash scripts/hermes-deploy.sh
 # Deploy SOUL.md only (no restart required)
 cp dotfiles/SOUL.md ~/.hermes/profiles/<active-profile>/SOUL.md
 
-# Deploy a specific hook
-cp dotfiles/inject-market-data.sh ~/.hermes/agent-hooks/inject-market-data.sh
-chmod +x ~/.hermes/agent-hooks/inject-market-data.sh
-
-# Reload a specific systemd user service after deploy
+# Reload user services after deploy
 systemctl --user daemon-reload
-systemctl --user restart hermes-gateway.service
-
-# Deploy data-refresh as SYSTEM unit (requires sudo)
-sudo cp ~/hanshermesagent/dotfiles/hermes-data-refresh.service /etc/systemd/system/
-sudo cp ~/hanshermesagent/dotfiles/hermes-data-refresh.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now hermes-data-refresh.timer
+systemctl --user restart hermes-gateway-hanshermesagent.service
 ```
 
 ---

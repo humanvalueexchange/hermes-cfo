@@ -42,8 +42,6 @@ inconsistent vectors. There is no cloud fallback.
 | Service | Role |
 |---|---|
 | `hermes-gateway-hanshermesagent.service` | WhatsApp-facing Hermes gateway |
-| `hermes-mcp.service` | Local MCP server on port `8765` |
-| `hermes-telegram-log.service` | Telegram audit/log watcher |
 | `hermes-browser.service` | Persistent browser session for Hermes tools |
 | `hve-intake.path` | Watches the PDF intake inbox |
 | `hve-intake.service` | Extracts, chunks, indexes, and archives PDFs |
@@ -77,9 +75,9 @@ embeddings are provided by `nomic-embed-text`.
 
 ## Knowledge intake
 
-Telegram is used as a strict knowledge collector for links and PDFs. The
-collector preserves source material and provenance rather than treating a
-conversation as the durable knowledge store.
+Telegram link/PDF ingestion is owned by HVE-Librarian, not the Hans Chief of
+Staff profile. This repository preserves the shared intake and provenance
+components without enabling Telegram for `hanshermesagent`.
 
 ```
 
@@ -88,10 +86,9 @@ deliberately stricter than checking `ollama list`: residency and the actual
 runtime context reported by `ollama ps` are what protect the three-model hot
 policy from accidental eviction.
 
-Local SQLite/FTS5 is the durable Hermes memory layer. Telegram is reserved for
-link/PDF ingestion, while WhatsApp is the primary human-facing channel for
-Hermes communications and scheduled briefings.
-Telegram link/PDF
+Local SQLite/FTS5 is the durable Hermes memory layer. WhatsApp is the primary
+human-facing channel for Hermes communications and scheduled briefings.
+Shared librarian intake
         |
         v
 /hve-library/intake/inbox
@@ -153,12 +150,12 @@ and human-auditable knowledge.
 ```text
 hanshermesagent/
 ├── config/                    Runtime and knowledge-layer configuration
-├── cron/                      Scheduled CFO and briefing jobs
+├── cron/                      Scheduled Chief of Staff briefing jobs
 ├── dotfiles/                  Deployable systemd units, hooks, and templates
 ├── tools/knowledge_layer_client.py  Independent knowledge-layer client boundary
 ├── mcp/                       Hermes MCP server and collector/library servers
 ├── skills/                    Native Hermes skill playbooks
-├── tools/                     Link, PDF, knowledge, and treasury utilities
+├── tools/                     Link, PDF, knowledge, and coordination utilities
 ├── scripts/                   Installation, deployment, validation, and diagnostics
 ├── tests/                     MCP, collector, and intake tests
 ├── VERSION.md                 Component version manifest
@@ -174,7 +171,6 @@ ollama ps
 
 # Inspect Hermes and intake services
 systemctl --user status hermes-gateway-hanshermesagent.service
-systemctl --user status hermes-mcp.service
 systemctl --user status hve-intake.service
 journalctl --user -u hve-intake.service --since "1 hour ago" --no-pager
 
@@ -182,7 +178,7 @@ journalctl --user -u hve-intake.service --since "1 hour ago" --no-pager
 bash scripts/validate-knowledge-intake.sh
 
 # Run the full local unit and DGX integration validation
-bash scripts/validate-hermes-integration.sh
+Run the profile-specific validation scripts in this repository after deployment.
 ```
 
 Deployment templates and secret-handling rules are documented in
@@ -193,8 +189,9 @@ Deployment templates and secret-handling rules are documented in
 Hermes is designed to run without Docker, cloud inference, cloud OCR, or
 required external memory services. Ollama, Tesseract, Poppler, SQLite-backed
 state, LanceDB, and the Obsidian vault remain local to the DGX Spark. Network
-access is limited to explicitly enabled integrations such as Telegram,
-WhatsApp delivery, GitHub tools, and approved market-data sources.
+access is limited to explicitly enabled integrations such as WhatsApp
+delivery, GitHub tools, and approved knowledge sources. Financial and trading
+runtime belongs to `humanvalueexchange/hve-cfo`.
 
 ---
 

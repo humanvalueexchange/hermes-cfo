@@ -183,9 +183,9 @@ stream
 BT
 /F1 24 Tf
 72 720 Td
-(Hermes CFO intake validation smoke test.) Tj
+(Hermes Chief of Staff knowledge-intake validation smoke test.) Tj
 0 -32 Td
-(Bitcoin treasury, liquidity, and risk controls.) Tj
+(Knowledge provenance, intake, and local retention controls.) Tj
 ET
 endstream
 endobj

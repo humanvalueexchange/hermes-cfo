@@ -9,7 +9,6 @@ paths=(
   "$REPO_ROOT/README.md"
   "$REPO_ROOT/SECURITY.md"
   "$REPO_ROOT/config"
-  "$REPO_ROOT/cron"
   "$REPO_ROOT/dotfiles"
   "$REPO_ROOT/prompts"
   "$REPO_ROOT/scripts"

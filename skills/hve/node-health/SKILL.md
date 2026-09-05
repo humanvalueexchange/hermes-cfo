@@ -21,13 +21,15 @@ date: 2026-05-30
 
 ## Fallback
 
-If `get_node_diagnostic` is unavailable, run:
+If `get_node_diagnostic` is unavailable, use the local system tools directly:
 
 ```bash
-bash ~/hanshermesagent/scripts/hermes-diagnostic.sh
+nvidia-smi
+ollama ps
+systemctl --user status hermes-gateway-hanshermesagent.service --no-pager
 ```
 
-If both fail, say: `Diagnostic unavailable — MCP tool and hermes-diagnostic.sh both failed. Cannot provide system status.`
+If the local checks fail, say: `Diagnostic unavailable — local system checks failed. Cannot provide system status.`
 
 ## Non-Negotiables
 - Do not narrate the diagnostic call.

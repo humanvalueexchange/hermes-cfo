@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# hermes-install.sh — Bootstrap Hermes CFO on a fresh DGX Spark
+# hermes-install.sh — Bootstrap Hermes Chief of Staff on a fresh DGX Spark
 # Part of the bare-metal restore sequence (Phase 3 post-Timeshift)
 # Run from: ~/hanshermesagent/scripts/hermes-install.sh
 set -euo pipefail
@@ -12,7 +12,7 @@ ENV_FILE=~/.hermes-mcp.env
 SKILLS_DIR="$REPO_ROOT/skills/hve"
 
 echo "╔══════════════════════════════════════════════════╗"
-echo "║       Hermes CFO — Install / Bootstrap           ║"
+echo "║       Hermes Chief of Staff — Install / Bootstrap║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 
@@ -69,12 +69,7 @@ echo "✅ Native skills available at $SKILLS_DIR ($skill_count files)"
 cp "$REPO_ROOT/dotfiles/SOUL.md" "$HERMES_PROFILE/SOUL.md"
 echo "✅ SOUL.md installed to $HERMES_PROFILE/SOUL.md"
 
-# ── 6. Install hooks ─────────────────────────────────────────────────────────
-cp "$REPO_ROOT/dotfiles/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data.sh"
-chmod +x "$HERMES_HOOKS/inject-market-data.sh"
-echo "✅ Market data hook installed"
-
-# ── 6b. Install model preload service ────────────────────────────────────────
+# ── 6. Install model preload service ─────────────────────────────────────────
 mkdir -p "$HOME/.config/systemd/user"
 cp "$REPO_ROOT/dotfiles/hermes-model-preload.service" "$HOME/.config/systemd/user/hermes-model-preload.service"
 systemctl --user daemon-reload
@@ -98,7 +93,7 @@ fi
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"
-echo "║       Hermes CFO install complete ✅              ║"
+echo "║       Hermes Chief of Staff install complete ✅  ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 echo "Verify: hermes -p main 'get_node_diagnostic'"

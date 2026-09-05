@@ -107,8 +107,8 @@ def comment_github_issue(issue_number: int, comment_body: str, repo: str = "hans
         return "ERROR: HVE_GITHUB_TOKEN not found in ~/.hermes/.env"
 
     body = comment_body.strip()
-    if "_Hermes" not in body and "Hermes CFO" not in body:
-        body += "\n\n---\n*Posted by Hermes (CFO AI agent, Human Value Exchange)*"
+    if "_Hermes" not in body and "Hermes Chief of Staff" not in body:
+        body += "\n\n---\n*Posted by Hermes (Chief of Staff AI agent, Human Value Exchange)*"
 
     try:
         data = _request_github_json(

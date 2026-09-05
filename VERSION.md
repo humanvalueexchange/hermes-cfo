@@ -1,7 +1,7 @@
-# Hermes CFO — Version Manifest
+# Hermes Chief of Staff — Version Manifest
 # Single source of truth for all component versions.
-# Updated by Claude (CTO) on each component change.
-# Grok Build and Vulcan: always test against the versions listed here.
+# Updated by Luna (CTO) on each component change.
+# Vulcan and other approved implementers: always test against the versions listed here.
 
 ## Live Stack (DGX Spark — [DGX_LAN_IP])
 
@@ -18,15 +18,15 @@
 
 | Who | Responsibility |
 |---|---|
-| **Hermes (CFO AI)** | Daily version check via `scripts/hermes-update.sh` (cron 03:00) |
-| **Hermes** | Telegram alert to Hans when update available (< 3 days old = notify, > 7 days = auto-upgrade) |
-| **Claude (CTO)** | Approves major version upgrades, reviews security-tagged releases |
-| **Grok Build** | Runs `test-tool-enforcement.sh` after every upgrade to confirm no regression |
+| **Hermes (Chief of Staff)** | Daily version check via `scripts/hermes-update.sh` (cron 03:00) |
+| **Hermes** | WhatsApp alert to Hans when an update is available |
+| **Luna (CTO)** | Approves major version upgrades and reviews security-tagged releases |
+| **Vulcan** | Runs the approved validation suite after every upgrade |
 | **Vulcan** | Builds against version in this file — always check VERSION.md before opening a PR |
 
 ## Update Policy
 
-- **Daily**: Hermes checks PyPI at 03:00 UTC, notifies Hans via Telegram if behind
+- **Daily**: Hermes checks PyPI at 03:00 UTC, notifies Hans via WhatsApp if behind
 - **< 3 days old**: Notify only — allow team review of release notes
 - **3–7 days old**: Notify with auto-upgrade countdown
 - **> 7 days old**: Auto-upgrade, restart gateway, notify Hans, Grok Build runs tests

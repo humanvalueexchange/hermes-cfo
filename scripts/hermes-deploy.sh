@@ -92,20 +92,9 @@ fi
 
 # ── 6. Hooks diff ─────────────────────────────────────────────────────────────
 mkdir -p "$HERMES_HOOKS"
-if ! diff -q "$REPO_ROOT/dotfiles/inject-market-data.sh" \
-            "$HERMES_HOOKS/inject-market-data.sh" &>/dev/null 2>&1; then
-  echo "→ inject-market-data.sh changed — updating..."
-  cp "$REPO_ROOT/dotfiles/inject-market-data.sh" "$HERMES_HOOKS/inject-market-data.sh"
-  chmod +x "$HERMES_HOOKS/inject-market-data.sh"
-  echo "✅ inject-market-data.sh updated"
-  RESTART_NEEDED=true
-else
-  echo "✅ inject-market-data.sh — no changes"
-fi
-
 # ── 6b. Managed user units ────────────────────────────────────────────────────
 mkdir -p "$HOME/.config/systemd/user"
-for unit in hermes-mcp.service hermes-model-preload.service hve-intake.service hve-intake.path; do
+for unit in hermes-model-preload.service hve-intake.service hve-intake.path; do
   source_unit="$REPO_ROOT/dotfiles/$unit"
   destination_unit="$HOME/.config/systemd/user/$unit"
   if ! diff -q "$source_unit" "$destination_unit" &>/dev/null 2>&1; then
@@ -117,9 +106,6 @@ for unit in hermes-mcp.service hermes-model-preload.service hve-intake.service h
   fi
 done
 systemctl --user daemon-reload
-if systemctl --user is-active --quiet hermes-mcp.service 2>/dev/null; then
-  systemctl --user restart hermes-mcp.service
-fi
 if systemctl --user is-active --quiet hve-intake.path 2>/dev/null; then
   systemctl --user restart hve-intake.path
 fi
